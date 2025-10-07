@@ -1,9 +1,9 @@
 [submodule "api"]
 	path = api
-	url = https://github.com/TheBoostDeniers/soara-api.git
+	url = git@github.com:TeamSamavisa/solara-api.git
 [submodule "web-client"]
 	path = web-client
-	url = https://github.com/TheBoostDeniers/soara-web-client.git
+	url = git@github.com:TeamSamavisa/solara-web-client.git
 [submodule "timetabling-service"]
 	path = timetabling-service
-	url = https://github.com/TheBoostDeniers/soara-timetabling-service.git
+	url = git@github.com:TeamSamavisa/solara-timetabling-service.git
