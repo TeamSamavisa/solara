@@ -19,9 +19,9 @@ def empty_space_groups_cost(groups_empty_space):
             a = times[i-1]
             b = times[i]
             diff = b - a
-            # classes are in the same day if their time div 12 is the same
-            if a // 12 == b // 12 and diff > 1:
-                empty_per_day[a // 12] += diff - 1
+            # classes are in the same day if their time div 17 is the same (17 hours per day: 6am-11pm)
+            if a // 17 == b // 17 and diff > 1:
+                empty_per_day[a // 17] += diff - 1
                 cost += diff - 1
 
         # compare current max with empty spaces per day for current group
@@ -57,9 +57,9 @@ def empty_space_teachers_cost(teachers_empty_space):
             a = times[i - 1]
             b = times[i]
             diff = b - a
-            # classes are in the same day if their time div 12 is the same
-            if a // 12 == b // 12 and diff > 1:
-                empty_per_day[a // 12] += diff - 1
+            # classes are in the same day if their time div 17 is the same (17 hours per day: 6am-11pm)
+            if a // 17 == b // 17 and diff > 1:
+                empty_per_day[a // 17] += diff - 1
                 cost += diff - 1
 
         # compare current max with empty spaces per day for current teacher

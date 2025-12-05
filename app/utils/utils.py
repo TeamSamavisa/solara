@@ -49,14 +49,14 @@ def load_data_from_database(timetable_data: TimetableData,
     return timetable_data
 
 
-def set_up(num_of_classrooms: int, num_of_time_slots: int = 60) -> Tuple[List[List], List[Tuple[int, int]]]:
+def set_up(num_of_classrooms: int, num_of_time_slots: int = 85) -> Tuple[List[List], List[Tuple[int, int]]]:
     """
     Sets up the timetable matrix and the list of free slots.
     
     Args:
         num_of_classrooms: Number of classrooms (columns)
         num_of_time_slots: Number of time slots (rows). 
-                          Default: 60 = 5 days * 12 hours per day
+                          Default: 85 = 5 days * 17 hours per day (6am-11pm)
         
     Returns:
         matrix: Matrix [time][room] = allocation_index or None
@@ -82,7 +82,7 @@ def show_timetable(matrix: List[List]):
         matrix: Timetable matrix [time][room] = allocation_index
     """
     days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-    hours = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]  # Typical university hours
+    hours = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]  # 6am-11pm (17 hours)
 
     # print heading for classrooms
     for i in range(len(matrix[0])):
@@ -104,7 +104,7 @@ def show_timetable(matrix: List[List]):
             print()
         
         hour_cnt += 1
-        if hour_cnt >= 12:  # 12 slots por dia
+        if hour_cnt >= 17:  # 17 slots por dia (6am-11pm)
             hour_cnt = 0
             day_cnt += 1
             print()
