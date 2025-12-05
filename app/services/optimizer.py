@@ -30,13 +30,24 @@ def initial_population(data: TimetableData, matrix: List[List], free: List[Tuple
         teachers_empty_space: Empty spaces by teacher {teacher_id: [times]}
     """
     allocations = data.class_allocations
+    failed_allocations = []
 
     for index, allocation in allocations.items():
         ind = 0
         while True:
             if ind >= len(free):
                 # Could not allocate this class
-                print(f"Warning: Could not allocate class {index}")
+                failed_allocations.append({
+                    'index': index,
+                    'id': allocation.id,
+                    'class_group': allocation.class_group.name,
+                    'shift': allocation.class_group.shift.name,
+                    'subject': allocation.subject.name,
+                    'teacher': allocation.teacher.full_name,
+                    'duration': allocation.duration,
+                    'possible_classrooms': len(allocation.possible_classrooms)
+                })
+                print(f"WARNING:  Could not allocate #{index}: {allocation.class_group.name} - {allocation.subject.name} ({allocation.class_group.shift.name}, {allocation.duration}h)")
                 break
                 
             start_field = free[ind]
@@ -44,7 +55,7 @@ def initial_population(data: TimetableData, matrix: List[List], free: List[Tuple
             # Check if the class doesn't start on one day and end on the next
             start_time = start_field[0]
             end_time = start_time + int(allocation.duration) - 1
-            if start_time % 12 > end_time % 12:
+            if start_time % 17 > end_time % 17:
                 ind += 1
                 continue
 
@@ -87,21 +98,29 @@ def initial_population(data: TimetableData, matrix: List[List], free: List[Tuple
     for index, fields_list in filled.items():
         for field in fields_list:
             matrix[field[0]][field[1]] = index
+    
+    # Print summary
+    if failed_allocations:
+        print(f"\nWARNING:  {len(failed_allocations)} allocation(s) could NOT be initially placed:")
+        for fail in failed_allocations:
+            print(f"   - {fail['class_group']} ({fail['shift']}) - {fail['subject']} - Teacher: {fail['teacher'][:20]} - Duration: {fail['duration']}h - Rooms available: {fail['possible_classrooms']}")
+    
+    print(f"✓ {len(filled)}/{len(allocations)} allocations successfully placed in initial population\n")
 
 
 def map_row_to_schedule(row: int, schedules: Dict[int, "Schedule"]) -> Optional[int]:
     """
     Maps a matrix row (time slot) to a Schedule ID.
     
-    The matrix uses indices 0-59 representing:
-    - 0-11: Monday (7am-6pm)
-    - 12-23: Tuesday (7am-6pm)
-    - 24-35: Wednesday (7am-6pm)
-    - 36-47: Thursday (7am-6pm)
-    - 48-59: Friday (7am-6pm)
+    The matrix uses indices 0-84 representing:
+    - 0-16: Monday (6am-11pm = 17 hours)
+    - 17-33: Tuesday (6am-11pm = 17 hours)
+    - 34-50: Wednesday (6am-11pm = 17 hours)
+    - 51-67: Thursday (6am-11pm = 17 hours)
+    - 68-84: Friday (6am-11pm = 17 hours)
     
     Args:
-        row: Matrix row (0-59)
+        row: Matrix row (0-84)
         schedules: Dictionary of schedules {id: Schedule}
         
     Returns:
@@ -112,15 +131,17 @@ def map_row_to_schedule(row: int, schedules: Dict[int, "Schedule"]) -> Optional[
     
     # Map index to weekday and hour
     days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-    day_index = row // 12
-    hour_index = row % 12
+    hours_per_day = 17  # 6am to 11pm (6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22)
+    
+    day_index = row // hours_per_day
+    hour_index = row % hours_per_day
     
     if day_index >= len(days):
         return None
         
     weekday = days[day_index]
-    # Assuming schedules starting at 7am
-    hour = 7 + hour_index
+    # Schedules starting at 6am
+    hour = 6 + hour_index
     start_time = f"{hour:02d}:00"
     
     # Search for corresponding schedule
@@ -169,7 +190,17 @@ def valid_teacher_group_row(matrix: List[List], data: TimetableData,
     """
     allocation1 = data.class_allocations[allocation_index]
     
-    # VALIDATION 1: Check teacher availability (SCHEDULE_TEACHER)
+    # VALIDATION 1: Check if schedule belongs to the class group's shift
+    schedule_id = map_row_to_schedule(row, data.schedules)
+    if schedule_id is not None and schedule_id in data.schedules:
+        schedule = data.schedules[schedule_id]
+        class_group_shift_id = allocation1.class_group.shift.id
+        
+        # Schedule must belong to the same shift as the class group
+        if schedule.shift_id != class_group_shift_id:
+            return False
+    
+    # VALIDATION 2: Check teacher availability (SCHEDULE_TEACHER)
     if data.teacher_schedules is not None:
         teacher_id = allocation1.teacher.id
         
@@ -179,14 +210,11 @@ def valid_teacher_group_row(matrix: List[List], data: TimetableData,
             
             # If there are defined restrictions (non-empty list)
             if available_schedule_ids:
-                # Map matrix row to a schedule_id
-                schedule_id = map_row_to_schedule(row, data.schedules)
-                
                 # If schedule not found or teacher not available, invalidate
                 if schedule_id is None or schedule_id not in available_schedule_ids:
                     return False
     
-    # VALIDATION 2: Check for teacher and class group conflicts at the same time
+    # VALIDATION 3: Check for teacher and class group conflicts at the same time
     for j in range(len(matrix[row])):
         if matrix[row][j] is not None:
             allocation2 = data.class_allocations[matrix[row][j]]
@@ -237,7 +265,7 @@ def mutate_ideal_spot(matrix: List[List], data: TimetableData, allocation_index:
         # Check if the class doesn't start on one day and end on the next
         start_time = start_field[0]
         end_time = start_time + int(allocation.duration) - 1
-        if start_time % 12 > end_time % 12:
+        if start_time % 17 > end_time % 17:
             ind += 1
             continue
 
@@ -294,15 +322,72 @@ def mutate_ideal_spot(matrix: List[List], data: TimetableData, allocation_index:
             break
 
 
+def analyze_conflicts(matrix: List[List], data: TimetableData):
+    """Analyzes and prints detailed information about conflicts in the timetable."""
+    from app.services.optimizer import map_row_to_schedule
+    
+    teacher_conflicts = []
+    group_conflicts = []
+    
+    for i in range(len(matrix)):
+        for j in range(len(matrix[i])):
+            field = matrix[i][j]
+            if field is not None:
+                allocation1 = data.class_allocations[field]
+                
+                # Check conflicts with other allocations at the same time
+                for k in range(j + 1, len(matrix[i])):
+                    next_field = matrix[i][k]
+                    if next_field is not None:
+                        allocation2 = data.class_allocations[next_field]
+                        
+                        schedule_id = map_row_to_schedule(i, data.schedules)
+                        schedule = data.schedules.get(schedule_id) if schedule_id else None
+                        time_info = f"{schedule.weekday} {schedule.start_time}-{schedule.end_time}" if schedule else f"Row {i}"
+                        
+                        # Teacher conflict
+                        if allocation1.teacher.id == allocation2.teacher.id:
+                            teacher_conflicts.append({
+                                'time': time_info,
+                                'teacher': allocation1.teacher.full_name,
+                                'alloc1': f"{allocation1.class_group.name} - {allocation1.subject.name}",
+                                'alloc2': f"{allocation2.class_group.name} - {allocation2.subject.name}",
+                            })
+                        
+                        # Class group conflict
+                        if allocation1.class_group.id == allocation2.class_group.id:
+                            group_conflicts.append({
+                                'time': time_info,
+                                'group': allocation1.class_group.name,
+                                'alloc1': f"{allocation1.subject.name} (Prof. {allocation1.teacher.full_name[:15]})",
+                                'alloc2': f"{allocation2.subject.name} (Prof. {allocation2.teacher.full_name[:15]})",
+                            })
+    
+    if teacher_conflicts:
+        print(f"\nWARNING:  {len(teacher_conflicts)} TEACHER CONFLICT(S):")
+        for conf in teacher_conflicts[:10]:  # Show first 10
+            print(f"   {conf['time']}: {conf['teacher'][:25]}")
+            print(f"      - {conf['alloc1']}")
+            print(f"      - {conf['alloc2']}")
+    
+    if group_conflicts:
+        print(f"\nWARNING:  {len(group_conflicts)} CLASS GROUP CONFLICT(S):")
+        for conf in group_conflicts[:10]:  # Show first 10
+            print(f"   {conf['time']}: {conf['group']}")
+            print(f"      - {conf['alloc1']}")
+            print(f"      - {conf['alloc2']}")
+    
+    if not teacher_conflicts and not group_conflicts:
+        print("\n✓ No conflicts detected!")
+
+
 def evolutionary_algorithm(matrix: List[List], data: TimetableData, 
-                         free: List[Tuple[int, int]], filled: Dict[int, List[Tuple[int, int]]], 
-                         groups_empty_space: Dict[int, List[int]], 
-                         teachers_empty_space: Dict[int, List[int]]):
+                          free: List[Tuple[int, int]], filled: Dict[int, List[Tuple[int, int]]], 
+                          groups_empty_space: Dict[int, List[int]], 
+                          teachers_empty_space: Dict[int, List[int]]):
     """
     Evolutionary algorithm that tries to find a timetable such that hard constraints are satisfied.
-    Uses (1+1) evolutionary strategy with Schwefel's 1/5 success rule.
-    
-    Args:
+    Uses (1+1) evolutionary strategy with Schwefel's 1/5 success rule.    Args:
         matrix: Timetable matrix
         data: Timetable data
         free: List of free slots
@@ -363,6 +448,13 @@ def evolutionary_algorithm(matrix: List[List], data: TimetableData,
         print(f'  - Teachers: {cost_teachers}')
         print(f'  - Class groups: {cost_groups}')
         print(f'  - Classrooms: {cost_classrooms}\n')
+        
+        # Show detailed conflicts after last run
+        if run == run_times - 1 and loss_after > 0:
+            print("\n" + "=" * 60)
+            print("DETAILED CONFLICT ANALYSIS")
+            print("=" * 60)
+            analyze_conflicts(matrix, data)
 
 
 def simulated_hardening(matrix: List[List], data: TimetableData, 

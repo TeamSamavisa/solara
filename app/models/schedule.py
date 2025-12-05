@@ -14,8 +14,10 @@ class Schedule:
         weekday: Day of the week (Monday, Tuesday, Wednesday, Thursday, Friday)
         start_time: Start time in HH:MM format (e.g., "07:00", "14:00")
         end_time: End time in HH:MM format (e.g., "08:00", "15:00")
+        shift_id: Shift identifier (1=Morning, 2=Afternoon, 3=Evening, etc.)
     """
     id: int
     weekday: str
     start_time: str
     end_time: str
+    shift_id: int

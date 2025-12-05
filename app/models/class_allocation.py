@@ -16,7 +16,7 @@ class ClassAllocation:
     subject: "Subject"  # subject
     teacher: "Teacher"  # teacher
     duration: int  # in hours
-    schedule: Optional["Schedule"] = None  # allocated schedule
+    schedules: List["Schedule"]  # allocated schedules (can be multiple)
     classroom: Optional["Classroom"] = None  # allocated classroom
     
     @property

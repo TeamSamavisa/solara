@@ -101,7 +101,8 @@ def parse_timetable_data(data: Dict[str, Any]) -> TimetableData:
             id=schedule["id"],
             weekday=schedule["weekday"],
             start_time=schedule["start_time"],
-            end_time=schedule["end_time"]
+            end_time=schedule["end_time"],
+            shift_id=schedule["shift_id"]
         )
     
     # Parse Subjects (needs courses and space_types, but NOT teachers yet)
@@ -158,12 +159,20 @@ def parse_timetable_data(data: Dict[str, Any]) -> TimetableData:
     # Parse ClassAllocations
     class_allocations = {}
     for idx, allocation in enumerate(data.get("class_allocations", [])):
+        # Parse schedules for this allocation
+        allocation_schedules = []
+        if "schedules" in allocation and allocation["schedules"]:
+            for sched in allocation["schedules"]:
+                if sched["id"] in schedules:
+                    allocation_schedules.append(schedules[sched["id"]])
+        
         class_allocations[idx] = ClassAllocation(
             id=allocation.get("id"),
             class_group=class_groups[allocation["class_group_id"]],
             subject=subjects[allocation["subject_id"]],
             teacher=teachers[allocation["teacher_id"]],
-            duration=allocation["duration"]
+            duration=allocation["duration"],
+            schedules=allocation_schedules
         )
     
     # Parse auxiliary structures
@@ -219,29 +228,51 @@ def process_optimize_timetable(data: Dict[str, Any]) -> Dict[str, Any]:
                 classroom_idx = time_slots[0][1]
                 classroom = timetable_data.classrooms[classroom_idx]
                 
-                # Map time to day and hour
+                # Map time to day, hour and schedule_id
                 days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-                hours = list(range(7, 19))  # 7am-6pm
+                hours_per_day = 17  # 6am-11pm (6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22)
+                hours = list(range(6, 23))  # 6am-11pm
+                
+                # Get class group shift_id for validation
+                class_group_shift_id = allocation.class_group.shift.id
                 
                 time_info = []
+                schedule_ids = []
                 for time_slot in time_slots:
                     row = time_slot[0]
-                    day_idx = row // 12
-                    hour_idx = row % 12
+                    day_idx = row // hours_per_day
+                    hour_idx = row % hours_per_day
                     
                     if day_idx < len(days) and hour_idx < len(hours):
-                        time_info.append({
-                            "day": days[day_idx],
-                            "hour": hours[hour_idx]
-                        })
+                        weekday = days[day_idx]
+                        hour = hours[hour_idx]
+                        
+                        # Find schedule_id that matches day, hour AND shift
+                        schedule_id = None
+                        for sched_id, sched in timetable_data.schedules.items():
+                            if (sched.weekday == weekday and 
+                                sched.start_time.startswith(f"{hour:02d}:") and
+                                sched.shift_id == class_group_shift_id):
+                                schedule_id = sched_id
+                                break
+                        
+                        if schedule_id:
+                            schedule_ids.append(schedule_id)
+                            time_info.append({
+                                "day": weekday,
+                                "hour": hour,
+                                "schedule_id": schedule_id
+                            })
                 
                 optimized_schedule.append({
                     "allocation_id": allocation.id,
+                    "schedule_ids": schedule_ids,  # Add explicit schedule_ids
                     "class_group": {
                         "id": allocation.class_group.id,
                         "name": allocation.class_group.name,
                         "course": allocation.class_group.course.name,
-                        "shift": allocation.class_group.shift.name
+                        "shift": allocation.class_group.shift.name,
+                        "shift_id": class_group_shift_id
                     },
                     "subject": {
                         "id": allocation.subject.id,
