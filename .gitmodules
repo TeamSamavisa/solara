@@ -7,3 +7,6 @@
 [submodule "timetabling-service"]
 	path = timetabling-service
 	url = git@github.com:TeamSamavisa/solara-timetabling-service.git
+[submodule "mcp-server"]
+	path = mcp-server
+	url = git@github.com:TeamSamavisa/solara-mcp-server.git
