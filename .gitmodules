@@ -1,9 +1,6 @@
 [submodule "api"]
 	path = api
 	url = git@github.com:TeamSamavisa/solara-api.git
-[submodule "web-client"]
-	path = web-client
-	url = git@github.com:TeamSamavisa/solara-web-client.git
 [submodule "timetabling-service"]
 	path = timetabling-service
 	url = git@github.com:TeamSamavisa/solara-timetabling-service.git
