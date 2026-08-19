@@ -1,0 +1,184 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playwrite+HU:wght@100..400&display=swap');
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --solara-50: #eff6ff;
+  --solara-100: #dbeafe;
+  --solara-200: #bfdbfe;
+  --solara-300: #93c5fd;
+  --solara-400: #60a5fa;
+  --solara-500: #3b82f6;
+  --solara-600: #2563eb;
+  --solara-700: #1d4ed8;
+  --solara-800: #1e40af;
+  --solara-900: #1e3a8a;
+  --solara-950: #172554;
+}
+
+:root {
+  --font-playwrite: 'Playwrite HU', cursive;
+  --radius: 0.625rem;
+  /* Tema Claro - Baseado em Solara */
+  --background: var(--solara-50); /* #eff6ff - azul muito claro */
+  --foreground: var(--solara-950); /* #172554 - azul muito escuro */
+  --card: var(--solara-100); /* #dbeafe - azul clarinho */
+  --card-foreground: var(--solara-950); /* #172554 */
+  --popover: var(--solara-100); /* #dbeafe */
+  --popover-foreground: var(--solara-950); /* #172554 */
+  --primary: var(--solara-600); /* #2563eb - azul vibrante */
+  --primary-foreground: var(--solara-50); /* #eff6ff - texto claro */
+  --secondary: var(--solara-200); /* #bfdbfe - azul suave */
+  --secondary-foreground: var(--solara-900); /* #1e3a8a */
+  --muted: var(--solara-100); /* #dbeafe */
+  --muted-foreground: var(--solara-700); /* #1d4ed8 */
+  --accent: var(--solara-300); /* #93c5fd - azul médio claro */
+  --accent-foreground: var(--solara-900); /* #1e3a8a */
+  --destructive: oklch(0.577 0.245 27.325); /* vermelho - mantido */
+  --border: var(--solara-300); /* #93c5fd */
+  --input: var(--solara-200); /* #bfdbfe */
+  --ring: var(--solara-500); /* #3b82f6 */
+  --chart-1: var(--solara-500); /* #3b82f6 */
+  --chart-2: var(--solara-400); /* #60a5fa */
+  --chart-3: var(--solara-600); /* #2563eb */
+  --chart-4: var(--solara-700); /* #1d4ed8 */
+  --chart-5: var(--solara-300); /* #93c5fd */
+  --sidebar: var(--solara-100); /* #dbeafe */
+  --sidebar-foreground: var(--solara-950); /* #172554 */
+  --sidebar-primary: var(--solara-600); /* #2563eb */
+  --sidebar-primary-foreground: var(--solara-50); /* #eff6ff */
+  --sidebar-accent: var(--solara-200); /* #bfdbfe */
+  --sidebar-accent-foreground: var(--solara-900); /* #1e3a8a */
+  --sidebar-border: var(--solara-300); /* #93c5fd */
+  --sidebar-ring: var(--solara-500); /* #3b82f6 */
+}
+
+.dark {
+  /* Tema Escuro - Baseado em Solara (cores mais escuras) */
+  --background: #0a0f1a; /* quase preto - mais escuro que solara-950 */
+  --foreground: var(--solara-100); /* #dbeafe - texto claro azulado */
+  --card: #0f1729; /* azul escuro profundo - cards em destaque */
+  --card-foreground: var(--solara-50); /* #eff6ff - texto muito claro */
+  --popover: #0f1729; /* mesmo tom do card */
+  --popover-foreground: var(--solara-50); /* #eff6ff */
+  --primary: var(--solara-400); /* #60a5fa - azul mais claro e vibrante */
+  --primary-foreground: #0a0f1a; /* texto escuro sobre azul */
+  --secondary: var(--solara-900); /* #1e3a8a - azul bem escuro */
+  --secondary-foreground: var(--solara-200); /* #bfdbfe - texto claro */
+  --muted: var(--solara-950); /* #172554 - tom silenciado */
+  --muted-foreground: var(--solara-400); /* #60a5fa - texto médio */
+  --accent: var(--solara-800); /* #1e40af - azul médio escuro */
+  --accent-foreground: var(--solara-100); /* #dbeafe - texto claro */
+  --destructive: oklch(0.704 0.191 22.216); /* vermelho - mantido */
+  --border: var(--solara-900); /* #1e3a8a - bordas escuras */
+  --input: var(--solara-900); /* #1e3a8a - inputs escuros */
+  --ring: var(--solara-400); /* #60a5fa - foco vibrante */
+  --chart-1: var(--solara-400); /* #60a5fa */
+  --chart-2: var(--solara-500); /* #3b82f6 */
+  --chart-3: var(--solara-300); /* #93c5fd */
+  --chart-4: var(--solara-600); /* #2563eb */
+  --chart-5: var(--solara-200); /* #bfdbfe */
+  --sidebar: #060a12; /* ainda mais escuro que o background */
+  --sidebar-foreground: var(--solara-100); /* #dbeafe */
+  --sidebar-primary: var(--solara-400); /* #60a5fa - mais vibrante */
+  --sidebar-primary-foreground: #0a0f1a; /* texto escuro */
+  --sidebar-accent: #0f1729; /* tom intermediário */
+  --sidebar-accent-foreground: var(--solara-200); /* #bfdbfe */
+  --sidebar-border: var(--solara-950); /* #172554 - borda discreta */
+  --sidebar-ring: var(--solara-400); /* #60a5fa */
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    font-family: 'Poppins', sans-serif;
+  }
+}
+
+@layer utilities {
+  .font-playwrite {
+    font-family: 'Playwrite HU', cursive;
+  }
+}
+
+/* Custom Scrollbar Styles - Outside layers for proper application */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(156 163 175) transparent;
+}
+
+.dark * {
+  scrollbar-color: rgb(75 85 99) transparent;
+}
+
+/* WebKit browsers (Chrome, Safari, Edge) */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgb(203 213 225);
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(156 163 175);
+}
+
+/* Dark mode scrollbar */
+.dark *::-webkit-scrollbar-thumb {
+  background-color: rgb(71 85 105);
+}
+
+.dark *::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(100 116 139);
+}
