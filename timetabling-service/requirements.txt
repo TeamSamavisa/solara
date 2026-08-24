@@ -1,5 +1,0 @@
-numpy
-pandas
-pika
-python-dotenv
-requests
