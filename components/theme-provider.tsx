@@ -47,6 +47,12 @@ function ThemeHotkey() {
         return
       }
 
+      // Autofill (and some IME flows) dispatch a synthetic keydown with no
+      // `key`, even though the DOM type declares it as always present.
+      if (typeof event.key !== "string") {
+        return
+      }
+
       if (event.key.toLowerCase() !== "d") {
         return
       }
