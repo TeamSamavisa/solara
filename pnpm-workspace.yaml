@@ -1,0 +1,14 @@
+packages:
+  - apps/*
+  - packages/*
+
+# pnpm 10+ reads its own settings from here, not from .npmrc.
+# These mirror the guards previously kept in .npmrc:
+#   ignore-scripts=true   -> ignoreScripts
+#   min-release-age=7     -> minimumReleaseAge (in minutes: 7 * 24 * 60)
+#   save-exact=true       -> savePrefix: ""
+# `allow-git=none` has no pnpm equivalent; git dependencies are kept out by
+# review instead.
+ignoreScripts: true
+minimumReleaseAge: 10080
+savePrefix: ""
