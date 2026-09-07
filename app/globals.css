@@ -48,6 +48,10 @@
 }
 
 :root {
+    /* Tells the browser to paint native controls (scrollbars, date pickers,
+       number spinners) in the matching scheme instead of always assuming a
+       light page. */
+    color-scheme: light;
     --background: oklch(1 0 0);
     --foreground: oklch(0.141 0.005 285.823);
     --card: oklch(1 0 0);
@@ -83,6 +87,7 @@
 }
 
 .dark {
+    color-scheme: dark;
     --background: oklch(0.141 0.005 285.823);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.21 0.006 285.885);
@@ -129,4 +134,24 @@
   html {
     @apply font-sans;
     }
+}
+
+/* Printing the timetable: drop the app chrome and lay the grid out wide. */
+@media print {
+  @page {
+    size: landscape;
+    margin: 1cm;
+  }
+
+  [data-slot="sidebar"],
+  [data-slot="sidebar-gap"],
+  [data-slot="sidebar-container"],
+  [data-print-hide] {
+    display: none !important;
+  }
+
+  [data-slot="sidebar-inset"] {
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
 }
