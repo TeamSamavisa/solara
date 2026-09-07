@@ -34,9 +34,11 @@ const config: Config = {
   coverageDirectory: "coverage",
 
   // An array of regexp pattern strings used to skip coverage collection
-  // coveragePathIgnorePatterns: [
-  //   "\\\\node_modules\\\\"
-  // ],
+  coveragePathIgnorePatterns: [
+    "/node_modules/",
+    // Test scaffolding is not production code.
+    "<rootDir>/test/",
+  ],
 
   // Indicates which provider should be used to instrument code for coverage
   coverageProvider: "v8",
@@ -167,11 +169,9 @@ const config: Config = {
   // Adds a location field to test results
   // testLocationInResults: false,
 
-  // The glob patterns Jest uses to detect test files
-  // testMatch: [
-  //   "**/__tests__/**/*.?([mc])[jt]s?(x)",
-  //   "**/?(*.)+(spec|test).?([mc])[jt]s?(x)"
-  // ],
+  // The glob patterns Jest uses to detect test files.
+  // Tests live under `test/`, mirroring the source tree they cover.
+  testMatch: ["<rootDir>/test/**/*.test.?([mc])[jt]s?(x)"],
 
   // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
   // testPathIgnorePatterns: [
