@@ -31,7 +31,7 @@ export function ListPagination({
       aria-label="Paginação"
       className="flex flex-col items-center justify-between gap-3 pt-4 sm:flex-row"
     >
-      <p className="text-muted-foreground text-sm">
+      <p className="text-sm text-muted-foreground">
         Mostrando {firstItem}–{lastItem} de {totalItems} {label}
       </p>
 

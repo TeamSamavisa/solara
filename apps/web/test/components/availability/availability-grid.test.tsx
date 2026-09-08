@@ -28,7 +28,7 @@ describe("AvailabilityGrid", () => {
         slots={slots}
         selectedScheduleIds={[]}
         onToggle={toggleFor()}
-      />,
+      />
     )
 
     expect(screen.getByRole("heading", { name: "Segunda" })).toBeInTheDocument()
@@ -42,7 +42,7 @@ describe("AvailabilityGrid", () => {
         slots={slots}
         selectedScheduleIds={[]}
         onToggle={toggleFor()}
-      />,
+      />
     )
 
     const buttons = screen.getAllByRole("button")
@@ -56,14 +56,14 @@ describe("AvailabilityGrid", () => {
         slots={slots}
         selectedScheduleIds={[3]}
         onToggle={toggleFor()}
-      />,
+      />
     )
 
     expect(
-      screen.getByRole("button", { name: "Quarta 10:00 às 11:40" }),
+      screen.getByRole("button", { name: "Quarta 10:00 às 11:40" })
     ).toHaveAttribute("aria-pressed", "true")
     expect(
-      screen.getByRole("button", { name: "Segunda 07:30 às 09:00" }),
+      screen.getByRole("button", { name: "Segunda 07:30 às 09:00" })
     ).toHaveAttribute("aria-pressed", "false")
   })
 
@@ -73,7 +73,7 @@ describe("AvailabilityGrid", () => {
         slots={slots}
         selectedScheduleIds={[1, 3]}
         onToggle={toggleFor()}
-      />,
+      />
     )
 
     expect(screen.getByText("2")).toBeInTheDocument()
@@ -87,11 +87,11 @@ describe("AvailabilityGrid", () => {
         slots={slots}
         selectedScheduleIds={[]}
         onToggle={onToggle}
-      />,
+      />
     )
 
     await user.click(
-      screen.getByRole("button", { name: "Quarta 10:00 às 11:40" }),
+      screen.getByRole("button", { name: "Quarta 10:00 às 11:40" })
     )
 
     expect(onToggle).toHaveBeenCalledWith(3, true)
@@ -105,11 +105,11 @@ describe("AvailabilityGrid", () => {
         slots={slots}
         selectedScheduleIds={[3]}
         onToggle={onToggle}
-      />,
+      />
     )
 
     await user.click(
-      screen.getByRole("button", { name: "Quarta 10:00 às 11:40" }),
+      screen.getByRole("button", { name: "Quarta 10:00 às 11:40" })
     )
 
     expect(onToggle).toHaveBeenCalledWith(3, false)
@@ -118,7 +118,7 @@ describe("AvailabilityGrid", () => {
   it("reflects the click before the server answers", async () => {
     let resolve: (value: { success: boolean }) => void = () => {}
     const onToggle = jest.fn(
-      () => new Promise<{ success: boolean }>((r) => (resolve = r)),
+      () => new Promise<{ success: boolean }>((r) => (resolve = r))
     )
     const user = userEvent.setup()
     render(
@@ -126,7 +126,7 @@ describe("AvailabilityGrid", () => {
         slots={slots}
         selectedScheduleIds={[]}
         onToggle={onToggle}
-      />,
+      />
     )
 
     const slot = screen.getByRole("button", { name: "Quarta 10:00 às 11:40" })
@@ -144,7 +144,7 @@ describe("AvailabilityGrid", () => {
         slots={[]}
         selectedScheduleIds={[]}
         onToggle={toggleFor()}
-      />,
+      />
     )
 
     expect(screen.getByText("Nenhum horário cadastrado.")).toBeInTheDocument()
@@ -159,11 +159,11 @@ describe("AvailabilityGrid", () => {
         selectedScheduleIds={[]}
         onToggle={onToggle}
         readOnly
-      />,
+      />
     )
 
     await user.click(
-      screen.getByRole("button", { name: "Quarta 10:00 às 11:40" }),
+      screen.getByRole("button", { name: "Quarta 10:00 às 11:40" })
     )
 
     expect(onToggle).not.toHaveBeenCalled()

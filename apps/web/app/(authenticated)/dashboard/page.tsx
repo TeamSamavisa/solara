@@ -22,7 +22,7 @@ export default async function DashboardPage() {
 
   const greeting = greetingFor(new Date().getHours())
   const shortcuts = visibleNavGroups(session.role).flatMap(
-    (group) => group.items,
+    (group) => group.items
   )
 
   return (
@@ -32,7 +32,7 @@ export default async function DashboardPage() {
           {greeting}
           {user?.full_name ? `, ${user.full_name}` : ""}!
         </h1>
-        <p className="text-muted-foreground text-lg">
+        <p className="text-lg text-muted-foreground">
           {ROLE_LABELS[session.role]}
         </p>
       </div>
@@ -43,14 +43,14 @@ export default async function DashboardPage() {
           {shortcuts.map((item) => (
             <Card
               key={item.href}
-              className="hover:border-ring transition-colors"
+              className="transition-colors hover:border-ring"
             >
               <CardContent>
                 <Link
                   href={item.href}
                   className="flex items-center gap-3 font-medium"
                 >
-                  <item.icon className="text-muted-foreground size-5 shrink-0" />
+                  <item.icon className="size-5 shrink-0 text-muted-foreground" />
                   {item.label}
                 </Link>
               </CardContent>

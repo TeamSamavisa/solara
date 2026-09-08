@@ -35,7 +35,7 @@ export default function AuthenticatedError({
       </CardHeader>
       <CardContent className="space-y-4">
         {error.digest ? (
-          <p className="text-muted-foreground font-mono text-xs">
+          <p className="font-mono text-xs text-muted-foreground">
             Referência: {error.digest}
           </p>
         ) : null}

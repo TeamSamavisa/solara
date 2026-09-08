@@ -8,7 +8,7 @@ import { WEEKDAYS } from "@/lib/weekdays"
 export function TimetableGrid({ timetable }: { timetable: Timetable }) {
   if (timetable.slots.length === 0) {
     return (
-      <p className="text-muted-foreground py-8 text-center text-sm">
+      <p className="py-8 text-center text-sm text-muted-foreground">
         Nenhuma alocação com horário definido para esta turma.
       </p>
     )
@@ -21,7 +21,7 @@ export function TimetableGrid({ timetable }: { timetable: Timetable }) {
           <tr>
             <th
               scope="col"
-              className="bg-muted w-20 border p-1 text-center font-bold"
+              className="w-20 border bg-muted p-1 text-center font-bold"
             >
               Horário
             </th>
@@ -29,7 +29,7 @@ export function TimetableGrid({ timetable }: { timetable: Timetable }) {
               <th
                 key={weekday.value}
                 scope="col"
-                className="bg-muted border p-1 text-center font-bold"
+                className="border bg-muted p-1 text-center font-bold"
               >
                 {weekday.label}
               </th>
@@ -41,23 +41,20 @@ export function TimetableGrid({ timetable }: { timetable: Timetable }) {
             <tr key={slot}>
               <th
                 scope="row"
-                className="bg-muted/50 w-20 border p-1 text-center font-semibold whitespace-nowrap"
+                className="w-20 border bg-muted/50 p-1 text-center font-semibold whitespace-nowrap"
               >
                 {slot}
               </th>
               {WEEKDAYS.map((weekday) => (
-                <td
-                  key={weekday.value}
-                  className="border p-0.5 align-top"
-                >
+                <td key={weekday.value} className="border p-0.5 align-top">
                   {timetable.grid[weekday.value]?.[slot]?.map((cell, index) => (
                     <div
                       key={index}
                       className={cn(
                         "mb-0.5 rounded-none p-1 last:mb-0",
                         cell.violatesAvailability
-                          ? "border-destructive/50 bg-destructive/10 border"
-                          : "bg-muted/40",
+                          ? "border border-destructive/50 bg-destructive/10"
+                          : "bg-muted/40"
                       )}
                     >
                       <div className="font-semibold">{cell.subject}</div>
@@ -66,7 +63,7 @@ export function TimetableGrid({ timetable }: { timetable: Timetable }) {
                       </div>
                       <div className="text-muted-foreground">{cell.space}</div>
                       {cell.violatesAvailability ? (
-                        <div className="text-destructive mt-0.5 flex items-center gap-1 font-medium">
+                        <div className="mt-0.5 flex items-center gap-1 font-medium text-destructive">
                           <TriangleAlertIcon className="size-3" />
                           Viola disponibilidade
                         </div>

@@ -33,7 +33,7 @@ export default async function LoginPage({
           sizes="60vw"
           className="object-cover"
         />
-        <div className="from-primary/90 to-primary absolute inset-0 bg-gradient-to-br opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/90 to-primary opacity-90" />
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-8 lg:flex-row">
           <Image
             src="/solara.png"
@@ -42,7 +42,7 @@ export default async function LoginPage({
             height={192}
             className="size-48 rounded-full object-cover"
           />
-          <span className="text-primary-foreground text-6xl font-bold">
+          <span className="text-6xl font-bold text-primary-foreground">
             Solara
           </span>
         </div>

@@ -112,7 +112,7 @@ export function ProfileForm({ user }: { user: PublicUser }) {
       </FieldGroup>
 
       {state?.message && !state.success ? (
-        <p role="alert" className="text-destructive text-sm">
+        <p role="alert" className="text-sm text-destructive">
           {state.message}
         </p>
       ) : null}

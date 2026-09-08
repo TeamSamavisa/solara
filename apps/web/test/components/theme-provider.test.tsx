@@ -34,7 +34,7 @@ describe("ThemeProvider hotkey", () => {
     render(
       <ThemeProvider>
         <div />
-      </ThemeProvider>,
+      </ThemeProvider>
     )
 
     // Edge dispatches a synthetic keydown while autofilling credentials; it
@@ -50,7 +50,7 @@ describe("ThemeProvider hotkey", () => {
     render(
       <ThemeProvider>
         <div />
-      </ThemeProvider>,
+      </ThemeProvider>
     )
 
     dispatchKeyDown({ key: "a" })
@@ -64,7 +64,7 @@ describe("ThemeProvider hotkey", () => {
     render(
       <ThemeProvider>
         <div />
-      </ThemeProvider>,
+      </ThemeProvider>
     )
 
     dispatchKeyDown({ key: "d" })

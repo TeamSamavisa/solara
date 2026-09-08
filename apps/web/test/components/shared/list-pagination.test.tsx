@@ -28,12 +28,10 @@ describe("ListPagination", () => {
         searchParams={{}}
         pagination={meta()}
         label="turnos"
-      />,
+      />
     )
 
-    expect(
-      screen.getByText("Mostrando 11–20 de 25 turnos"),
-    ).toBeInTheDocument()
+    expect(screen.getByText("Mostrando 11–20 de 25 turnos")).toBeInTheDocument()
     expect(screen.getByText("Página 2 de 3")).toBeInTheDocument()
   })
 
@@ -43,7 +41,7 @@ describe("ListPagination", () => {
         pathname="/shifts"
         searchParams={{}}
         pagination={meta({ currentPage: 3, hasNextPage: false })}
-      />,
+      />
     )
 
     expect(screen.getByText("Mostrando 21–25 de 25 itens")).toBeInTheDocument()
@@ -55,16 +53,16 @@ describe("ListPagination", () => {
         pathname="/shifts"
         searchParams={{ name: "Matutino" }}
         pagination={meta()}
-      />,
+      />
     )
 
     expect(screen.getByRole("link", { name: "Anterior" })).toHaveAttribute(
       "href",
-      "/shifts?name=Matutino&page=1",
+      "/shifts?name=Matutino&page=1"
     )
     expect(screen.getByRole("link", { name: "Próxima" })).toHaveAttribute(
       "href",
-      "/shifts?name=Matutino&page=3",
+      "/shifts?name=Matutino&page=3"
     )
   })
 
@@ -74,7 +72,7 @@ describe("ListPagination", () => {
         pathname="/shifts"
         searchParams={{}}
         pagination={meta({ currentPage: 1, hasPrevPage: false })}
-      />,
+      />
     )
 
     expect(screen.queryByRole("link", { name: "Anterior" })).toBeNull()
@@ -87,7 +85,7 @@ describe("ListPagination", () => {
         pathname="/shifts"
         searchParams={{}}
         pagination={meta({ currentPage: 3, hasNextPage: false })}
-      />,
+      />
     )
 
     expect(screen.queryByRole("link", { name: "Próxima" })).toBeNull()
@@ -105,7 +103,7 @@ describe("ListPagination", () => {
           hasNextPage: false,
           hasPrevPage: false,
         })}
-      />,
+      />
     )
 
     expect(container).toBeEmptyDOMElement()

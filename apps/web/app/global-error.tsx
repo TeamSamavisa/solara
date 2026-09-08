@@ -26,9 +26,7 @@ export default function GlobalError({
           textAlign: "center",
         }}
       >
-        <h1 style={{ fontSize: "1.5rem", fontWeight: 600 }}>
-          Algo deu errado
-        </h1>
+        <h1 style={{ fontSize: "1.5rem", fontWeight: 600 }}>Algo deu errado</h1>
         <p style={{ color: "#71717a", maxWidth: "40ch" }}>
           Ocorreu uma falha inesperada na aplicação.
         </p>

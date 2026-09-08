@@ -21,7 +21,7 @@ function renderSidebar(role: Role) {
       <SidebarProvider>
         <AppSidebar role={role} userName="Ana Souza" />
       </SidebarProvider>
-    </TooltipProvider>,
+    </TooltipProvider>
   )
 }
 
@@ -35,18 +35,18 @@ describe("AppSidebar", () => {
 
     expect(screen.getByRole("link", { name: "Início" })).toHaveAttribute(
       "href",
-      "/dashboard",
+      "/dashboard"
     )
     expect(
-      screen.getByRole("link", { name: "Disponibilidade" }),
+      screen.getByRole("link", { name: "Disponibilidade" })
     ).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Ana Souza" })).toHaveAttribute(
       "href",
-      "/profile",
+      "/profile"
     )
     expect(screen.getByRole("button", { name: "Sair" })).toBeInTheDocument()
     expect(
-      screen.getByRole("button", { name: "Alternar tema" }),
+      screen.getByRole("button", { name: "Alternar tema" })
     ).toBeInTheDocument()
   })
 
@@ -72,7 +72,7 @@ describe("AppSidebar", () => {
 
     expect(screen.getByRole("link", { name: "Usuários" })).toHaveAttribute(
       "href",
-      "/users",
+      "/users"
     )
     expect(screen.getByText("Sistema")).toBeInTheDocument()
   })
@@ -82,11 +82,11 @@ describe("AppSidebar", () => {
 
     expect(screen.getByRole("link", { name: "Turnos" })).toHaveAttribute(
       "data-active",
-      "true",
+      "true"
     )
     expect(screen.getByRole("link", { name: "Início" })).toHaveAttribute(
       "data-active",
-      "false",
+      "false"
     )
   })
 })
