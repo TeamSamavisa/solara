@@ -9,6 +9,15 @@ const eslintConfig = defineConfig([
     // The Next.js app no longer sits at the repo root, so the rules that look
     // for it (such as no-html-link-for-pages) need to be told where it is.
     settings: { next: { rootDir: "apps/web" } },
+    rules: {
+      // Some signatures are fixed by their caller (`useActionState`, BullMQ's
+      // processor). Prefixing with `_` marks a parameter as deliberately
+      // unused instead of forcing it out of the signature.
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
+    },
   },
   // Override default ignores of eslint-config-next.
   globalIgnores([
