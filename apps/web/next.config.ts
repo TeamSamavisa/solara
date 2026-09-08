@@ -7,10 +7,10 @@ import type { NextConfig } from "next"
 loadEnv({ path: "../../.env", quiet: true })
 
 const nextConfig: NextConfig = {
-  // `jose` ships ESM only, and `@solara/db` is published as TypeScript source.
-  // Listing them here also makes `next/jest` transform them, which is the only
-  // supported way to relax `transformIgnorePatterns`.
-  transpilePackages: ["jose", "@solara/db"],
+  // `jose` ships ESM only, and `@solara/db` / `@solara/queue` are published as
+  // TypeScript source. Listing them here also makes `next/jest` transform
+  // them, which is the only supported way to relax `transformIgnorePatterns`.
+  transpilePackages: ["jose", "@solara/db", "@solara/queue"],
 }
 
 export default nextConfig
