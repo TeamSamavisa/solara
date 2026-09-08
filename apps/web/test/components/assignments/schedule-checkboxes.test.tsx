@@ -33,7 +33,7 @@ describe("Checkbox inside a form", () => {
           </label>
         ))}
         <button type="submit">Enviar</button>
-      </form>,
+      </form>
     )
 
     return onSubmit

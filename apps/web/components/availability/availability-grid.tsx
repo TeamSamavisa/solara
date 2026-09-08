@@ -17,7 +17,7 @@ export interface AvailabilitySlot {
 
 export type ToggleAvailability = (
   scheduleId: number,
-  available: boolean,
+  available: boolean
 ) => Promise<FormState>
 
 export function AvailabilityGrid({
@@ -44,7 +44,7 @@ export function AvailabilityGrid({
       else next.add(scheduleId)
 
       return next
-    },
+    }
   )
 
   function toggle(scheduleId: number) {
@@ -68,7 +68,7 @@ export function AvailabilityGrid({
 
   if (byWeekday.length === 0) {
     return (
-      <p className="text-muted-foreground py-8 text-center text-sm">
+      <p className="py-8 text-center text-sm text-muted-foreground">
         Nenhum horário cadastrado.
       </p>
     )
@@ -76,8 +76,8 @@ export function AvailabilityGrid({
 
   return (
     <div className="space-y-6">
-      <p className="text-muted-foreground text-sm">
-        <span className="text-foreground font-semibold">{selected.size}</span>{" "}
+      <p className="text-sm text-muted-foreground">
+        <span className="font-semibold text-foreground">{selected.size}</span>{" "}
         horário(s) selecionado(s)
       </p>
 

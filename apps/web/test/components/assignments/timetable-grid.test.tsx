@@ -62,13 +62,15 @@ describe("TimetableGrid", () => {
             Saturday: { "07:30 - 09:10": [], "10:00 - 11:40": [] },
           },
         })}
-      />,
+      />
     )
 
-    expect(screen.getByRole("rowheader", { name: "07:30 - 09:10" }))
-      .toBeInTheDocument()
-    expect(screen.getByRole("rowheader", { name: "10:00 - 11:40" }))
-      .toBeInTheDocument()
+    expect(
+      screen.getByRole("rowheader", { name: "07:30 - 09:10" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("rowheader", { name: "10:00 - 11:40" })
+    ).toBeInTheDocument()
   })
 
   it("shows the class details in the matching cell", () => {
@@ -97,7 +99,7 @@ describe("TimetableGrid", () => {
             },
           },
         })}
-      />,
+      />
     )
 
     expect(screen.getByText("Viola disponibilidade")).toBeInTheDocument()
@@ -133,7 +135,7 @@ describe("TimetableGrid", () => {
             },
           },
         })}
-      />,
+      />
     )
 
     const cell = container.querySelectorAll("tbody td")[0] as HTMLElement
@@ -145,7 +147,7 @@ describe("TimetableGrid", () => {
     render(<TimetableGrid timetable={{ slots: [], grid: {} }} />)
 
     expect(
-      screen.getByText("Nenhuma alocação com horário definido para esta turma."),
+      screen.getByText("Nenhuma alocação com horário definido para esta turma.")
     ).toBeInTheDocument()
     expect(screen.queryByRole("table")).toBeNull()
   })

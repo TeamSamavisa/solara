@@ -31,7 +31,7 @@ export default async function AvailabilityPage() {
             <h2 className="text-xl font-semibold">
               Selecione seus horários disponíveis
             </h2>
-            <p className="text-muted-foreground mt-1 text-sm">
+            <p className="mt-1 text-sm text-muted-foreground">
               Clique nos horários em que você está disponível para dar aulas.
             </p>
           </div>

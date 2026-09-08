@@ -15,9 +15,9 @@ export function StatusPage({
 }) {
   return (
     <main className="flex min-h-svh flex-col items-center justify-center gap-4 p-8 text-center">
-      <p className="text-muted-foreground text-7xl font-bold">{code}</p>
+      <p className="text-7xl font-bold text-muted-foreground">{code}</p>
       <h1 className="text-2xl font-semibold">{title}</h1>
-      <p className="text-muted-foreground max-w-prose">{description}</p>
+      <p className="max-w-prose text-muted-foreground">{description}</p>
       <Button asChild className="mt-2">
         <Link href={action.href}>{action.label}</Link>
       </Button>

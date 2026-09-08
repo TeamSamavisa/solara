@@ -58,7 +58,7 @@ describe("ShiftsTable", () => {
     await user.click(screen.getByLabelText("Editar Matutino"))
 
     expect(
-      await screen.findByRole("heading", { name: "Editar Turno" }),
+      await screen.findByRole("heading", { name: "Editar Turno" })
     ).toBeInTheDocument()
     expect(screen.getByLabelText("Nome")).toHaveValue("Matutino")
   })
@@ -71,13 +71,13 @@ describe("ShiftsTable", () => {
 
     const dialog = await screen.findByRole("alertdialog")
     expect(
-      within(dialog).getByRole("heading", { name: "Confirmar exclusão" }),
+      within(dialog).getByRole("heading", { name: "Confirmar exclusão" })
     ).toBeInTheDocument()
     expect(dialog).toHaveTextContent(
-      "Tem certeza que deseja excluir o turno Noturno?",
+      "Tem certeza que deseja excluir o turno Noturno?"
     )
     expect(
-      within(dialog).getByRole("button", { name: "Excluir" }),
+      within(dialog).getByRole("button", { name: "Excluir" })
     ).toBeInTheDocument()
   })
 })

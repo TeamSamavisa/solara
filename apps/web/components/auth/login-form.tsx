@@ -66,7 +66,7 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
             <button
               type="button"
               onClick={() => setShowPassword((visible) => !visible)}
-              className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
+              className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
               aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
               tabIndex={-1}
             >
@@ -84,7 +84,7 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
       {state?.message ? (
         <p
           role="alert"
-          className="border-destructive/50 bg-destructive/10 text-destructive rounded-md border px-3 py-2 text-sm"
+          className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
         >
           {state.message}
         </p>

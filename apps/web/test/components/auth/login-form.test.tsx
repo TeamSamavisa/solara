@@ -85,11 +85,11 @@ describe("LoginForm submission", () => {
 
     expect(mockLogin).toHaveBeenCalledTimes(1)
     expect(
-      await screen.findByText("Informe um e-mail válido."),
+      await screen.findByText("Informe um e-mail válido.")
     ).toBeInTheDocument()
     expect(screen.getByLabelText("E-mail")).toHaveAttribute(
       "aria-invalid",
-      "true",
+      "true"
     )
   })
 

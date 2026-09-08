@@ -63,9 +63,7 @@ export function SelectFilter({
         </SelectContent>
       </Select>
 
-      {value !== ALL ? (
-        <input type="hidden" name={name} value={value} />
-      ) : null}
+      {value !== ALL ? <input type="hidden" name={name} value={value} /> : null}
     </>
   )
 }

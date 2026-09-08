@@ -18,13 +18,13 @@ function renderFilter(defaultValue?: string) {
         options={WEEKDAYS}
         defaultValue={defaultValue}
       />
-    </form>,
+    </form>
   )
 }
 
 function submittedValue(container: HTMLElement) {
   const hidden = container.querySelector<HTMLInputElement>(
-    'input[name="weekday"]',
+    'input[name="weekday"]'
   )
 
   return hidden?.value
@@ -59,12 +59,8 @@ describe("SelectFilter", () => {
 
     const options = await screen.findAllByRole("option")
     expect(options).toHaveLength(WEEKDAYS.length + 1)
-    expect(
-      screen.getByRole("option", { name: "Todos" }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole("option", { name: "Segunda" }),
-    ).toBeInTheDocument()
+    expect(screen.getByRole("option", { name: "Todos" })).toBeInTheDocument()
+    expect(screen.getByRole("option", { name: "Segunda" })).toBeInTheDocument()
   })
 
   it("submits the option the user picks", async () => {
@@ -93,7 +89,7 @@ describe("SelectFilter", () => {
       <form>
         <label htmlFor="weekday">Dia da semana</label>
         <SelectFilter id="weekday" name="weekday" options={WEEKDAYS} />
-      </form>,
+      </form>
     )
 
     expect(screen.getByLabelText("Dia da semana")).toBeInTheDocument()

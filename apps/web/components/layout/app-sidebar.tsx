@@ -105,7 +105,7 @@ export function AppSidebar({
               <SidebarMenuButton
                 type="submit"
                 tooltip="Sair"
-                className="text-destructive hover:text-destructive w-full"
+                className="w-full text-destructive hover:text-destructive"
               >
                 <LogOutIcon />
                 <span>Sair</span>
