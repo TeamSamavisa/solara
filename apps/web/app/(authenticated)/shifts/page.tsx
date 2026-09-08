@@ -1,11 +1,9 @@
-import { PlusIcon } from "lucide-react"
 import type { Metadata } from "next"
 
 import { FilterForm, PageHeader } from "@/components/shared/list-chrome"
 import { ListPagination } from "@/components/shared/list-pagination"
 import { ShiftDialog } from "@/components/shifts/shift-dialog"
 import { ShiftsTable } from "@/components/shifts/shifts-table"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -65,11 +63,7 @@ export default async function ShiftsPage({
 
             {canManage ? (
               <ShiftDialog
-                trigger={
-                  <Button>
-                    <PlusIcon /> Adicionar Turno
-                  </Button>
-                }
+                trigger={{ icon: "add", label: "Adicionar Turno" }}
               />
             ) : null}
           </div>

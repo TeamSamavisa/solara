@@ -2,6 +2,10 @@
 
 import { useState } from "react"
 
+import {
+  DialogTriggerButton,
+  type DialogTriggerSpec,
+} from "@/components/shared/dialog-trigger"
 import { setTeacherAvailabilityAction } from "@/app/(authenticated)/availability/actions"
 import {
   AvailabilityGrid,
@@ -29,19 +33,18 @@ export function TeacherAvailabilityDialog({
   teacherName: string
   slots: AvailabilitySlot[]
   selectedScheduleIds: number[]
-  trigger: React.ReactNode
+  trigger: DialogTriggerSpec
 }) {
   const [open, setOpen] = useState(false)
 
-  const toggle = (
-    scheduleId: number,
-    available: boolean,
-  ): Promise<FormState> =>
+  const toggle = (scheduleId: number, available: boolean): Promise<FormState> =>
     setTeacherAvailabilityAction(teacherId, scheduleId, available)
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogTrigger asChild>
+        <DialogTriggerButton {...trigger} />
+      </DialogTrigger>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>Disponibilidade de {teacherName}</DialogTitle>

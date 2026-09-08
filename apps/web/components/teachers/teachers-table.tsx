@@ -1,12 +1,11 @@
-import { CalendarClockIcon, PencilIcon, Trash2Icon } from "lucide-react"
 
+import { Truncated } from "@/components/shared/truncated"
 import { deleteTeacherAction } from "@/app/(authenticated)/teachers/actions"
 import type { AvailabilitySlot } from "@/components/availability/availability-grid"
 import { DeleteDialog } from "@/components/shared/delete-dialog"
 import { TeacherAvailabilityDialog } from "@/components/teachers/teacher-availability-dialog"
 import { TeacherDialog } from "@/components/teachers/teacher-dialog"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -31,7 +30,7 @@ export function TeachersTable({
 }) {
   if (teachers.length === 0) {
     return (
-      <p className="text-muted-foreground py-8 text-center text-sm">
+      <p className="py-8 text-center text-sm text-muted-foreground">
         Nenhum professor encontrado.
       </p>
     )
@@ -57,12 +56,16 @@ export function TeachersTable({
 
           return (
             <TableRow key={teacher.id}>
-              <TableCell>{teacher.full_name}</TableCell>
-              <TableCell className="text-muted-foreground">
-                {teacher.email}
+              <TableCell>
+                <Truncated className="max-w-56">{teacher.full_name}</Truncated>
               </TableCell>
               <TableCell className="text-muted-foreground">
-                {teacher.registration ?? "—"}
+                <Truncated className="max-w-56">{teacher.email}</Truncated>
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                <Truncated className="max-w-32">
+                  {teacher.registration}
+                </Truncated>
               </TableCell>
               <TableCell>
                 <Badge variant="secondary">{roleLabel(teacher.role)}</Badge>
@@ -77,42 +80,27 @@ export function TeachersTable({
                     teacherName={teacher.full_name}
                     slots={slots}
                     selectedScheduleIds={availability}
-                    trigger={
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Disponibilidade de ${teacher.full_name}`}
-                      >
-                        <CalendarClockIcon />
-                      </Button>
-                    }
+                    trigger={{
+                      icon: "availability",
+                      ariaLabel: `Disponibilidade de ${teacher.full_name}`,
+                    }}
                   />
                   <TeacherDialog
                     teacher={teacher}
-                    trigger={
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Editar ${teacher.full_name}`}
-                      >
-                        <PencilIcon />
-                      </Button>
-                    }
+                    trigger={{
+                      icon: "edit",
+                      ariaLabel: `Editar ${teacher.full_name}`,
+                    }}
                   />
                   <DeleteDialog
                     id={teacher.id}
                     name={teacher.full_name}
                     entityLabel="o professor"
                     action={deleteTeacherAction}
-                    trigger={
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Excluir ${teacher.full_name}`}
-                      >
-                        <Trash2Icon />
-                      </Button>
-                    }
+                    trigger={{
+                      icon: "delete",
+                      ariaLabel: `Excluir ${teacher.full_name}`,
+                    }}
                   />
                 </TableCell>
               ) : null}

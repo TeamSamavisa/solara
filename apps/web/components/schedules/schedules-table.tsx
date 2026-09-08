@@ -1,10 +1,9 @@
-import { PencilIcon, Trash2Icon } from "lucide-react"
 
+import { Truncated } from "@/components/shared/truncated"
 import { deleteScheduleAction } from "@/app/(authenticated)/schedules/actions"
 import { ScheduleDialog } from "@/components/schedules/schedule-dialog"
 import { DeleteDialog } from "@/components/shared/delete-dialog"
 import type { SelectOption } from "@/components/shared/form-fields"
-import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -31,7 +30,7 @@ export function SchedulesTable({
 }) {
   if (schedules.length === 0) {
     return (
-      <p className="text-muted-foreground py-8 text-center text-sm">
+      <p className="py-8 text-center text-sm text-muted-foreground">
         Nenhum horário encontrado.
       </p>
     )
@@ -57,37 +56,27 @@ export function SchedulesTable({
             <TableCell>{schedule.start_time}</TableCell>
             <TableCell>{schedule.end_time}</TableCell>
             <TableCell className="text-muted-foreground">
-              {schedule.shift?.name ?? "—"}
+              <Truncated className="max-w-48">{schedule.shift?.name}</Truncated>
             </TableCell>
             {canManage ? (
               <TableCell className="flex justify-end gap-2">
                 <ScheduleDialog
                   schedule={schedule}
                   shiftOptions={shiftOptions}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Editar ${describe(schedule)}`}
-                    >
-                      <PencilIcon />
-                    </Button>
-                  }
+                  trigger={{
+                    icon: "edit",
+                    ariaLabel: `Editar ${describe(schedule)}`,
+                  }}
                 />
                 <DeleteDialog
                   id={schedule.id}
                   name={describe(schedule)}
                   entityLabel="o horário"
                   action={deleteScheduleAction}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Excluir ${describe(schedule)}`}
-                    >
-                      <Trash2Icon />
-                    </Button>
-                  }
+                  trigger={{
+                    icon: "delete",
+                    ariaLabel: `Excluir ${describe(schedule)}`,
+                  }}
                 />
               </TableCell>
             ) : null}

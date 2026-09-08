@@ -4,6 +4,7 @@ import {
   createCourseAction,
   updateCourseAction,
 } from "@/app/(authenticated)/courses/actions"
+import type { DialogTriggerSpec } from "@/components/shared/dialog-trigger"
 import { EntityDialog } from "@/components/shared/entity-dialog"
 import {
   SelectField,
@@ -19,7 +20,7 @@ export function CourseDialog({
 }: {
   course?: CourseWithType
   courseTypeOptions: SelectOption[]
-  trigger: React.ReactNode
+  trigger: DialogTriggerSpec
 }) {
   const isEditing = Boolean(course)
 
@@ -52,9 +53,7 @@ export function CourseDialog({
             placeholder="Selecione um tipo de curso"
             options={courseTypeOptions}
             defaultValue={
-              course?.course_type_id
-                ? String(course.course_type_id)
-                : undefined
+              course?.course_type_id ? String(course.course_type_id) : undefined
             }
           />
         </>

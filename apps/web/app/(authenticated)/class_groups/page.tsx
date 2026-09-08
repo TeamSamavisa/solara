@@ -1,11 +1,9 @@
-import { PlusIcon } from "lucide-react"
 import type { Metadata } from "next"
 
 import { ClassGroupDialog } from "@/components/class-groups/class-group-dialog"
 import { ClassGroupsTable } from "@/components/class-groups/class-groups-table"
 import { FilterForm, PageHeader } from "@/components/shared/list-chrome"
 import { ListPagination } from "@/components/shared/list-pagination"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -92,11 +90,7 @@ export default async function ClassGroupsPage({
               <ClassGroupDialog
                 shiftOptions={shiftOptions}
                 courseOptions={courseOptions}
-                trigger={
-                  <Button>
-                    <PlusIcon /> Adicionar Turma
-                  </Button>
-                }
+                trigger={{ icon: "add", label: "Adicionar Turma" }}
               />
             ) : null}
           </div>

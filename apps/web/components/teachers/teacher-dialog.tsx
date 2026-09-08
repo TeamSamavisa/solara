@@ -4,6 +4,7 @@ import {
   createTeacherAction,
   updateTeacherAction,
 } from "@/app/(authenticated)/teachers/actions"
+import type { DialogTriggerSpec } from "@/components/shared/dialog-trigger"
 import { EntityDialog } from "@/components/shared/entity-dialog"
 import { TextField } from "@/components/shared/form-fields"
 import type { PublicUser } from "@solara/db/schemas"
@@ -13,7 +14,7 @@ export function TeacherDialog({
   trigger,
 }: {
   teacher?: PublicUser
-  trigger: React.ReactNode
+  trigger: DialogTriggerSpec
 }) {
   const isEditing = Boolean(teacher)
 

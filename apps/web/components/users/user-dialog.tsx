@@ -4,6 +4,7 @@ import {
   createUserAction,
   updateUserAction,
 } from "@/app/(authenticated)/users/actions"
+import type { DialogTriggerSpec } from "@/components/shared/dialog-trigger"
 import { EntityDialog } from "@/components/shared/entity-dialog"
 import {
   SelectField,
@@ -23,7 +24,7 @@ export function UserDialog({
   trigger,
 }: {
   user?: PublicUser
-  trigger: React.ReactNode
+  trigger: DialogTriggerSpec
 }) {
   const isEditing = Boolean(user)
 

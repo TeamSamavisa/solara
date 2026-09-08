@@ -4,6 +4,7 @@ import {
   createSpaceTypeAction,
   updateSpaceTypeAction,
 } from "@/app/(authenticated)/space_types/actions"
+import type { DialogTriggerSpec } from "@/components/shared/dialog-trigger"
 import { EntityDialog } from "@/components/shared/entity-dialog"
 import { TextField } from "@/components/shared/form-fields"
 import type { SpaceType } from "@solara/db/schemas"
@@ -13,7 +14,7 @@ export function SpaceTypeDialog({
   trigger,
 }: {
   spaceType?: SpaceType
-  trigger: React.ReactNode
+  trigger: DialogTriggerSpec
 }) {
   const isEditing = Boolean(spaceType)
 

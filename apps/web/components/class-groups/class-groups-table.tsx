@@ -1,10 +1,9 @@
-import { PencilIcon, Trash2Icon } from "lucide-react"
 
+import { Truncated } from "@/components/shared/truncated"
 import { deleteClassGroupAction } from "@/app/(authenticated)/class_groups/actions"
 import { ClassGroupDialog } from "@/components/class-groups/class-group-dialog"
 import { DeleteDialog } from "@/components/shared/delete-dialog"
 import type { SelectOption } from "@/components/shared/form-fields"
-import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -28,7 +27,7 @@ export function ClassGroupsTable({
 }) {
   if (classGroups.length === 0) {
     return (
-      <p className="text-muted-foreground py-8 text-center text-sm">
+      <p className="py-8 text-center text-sm text-muted-foreground">
         Nenhuma turma encontrada.
       </p>
     )
@@ -52,15 +51,21 @@ export function ClassGroupsTable({
       <TableBody>
         {classGroups.map((classGroup) => (
           <TableRow key={classGroup.id}>
-            <TableCell>{classGroup.name}</TableCell>
+            <TableCell>
+              <Truncated className="max-w-64">{classGroup.name}</Truncated>
+            </TableCell>
             <TableCell>{classGroup.semester}</TableCell>
             <TableCell>{classGroup.module}</TableCell>
             <TableCell>{classGroup.student_count}</TableCell>
             <TableCell className="text-muted-foreground">
-              {classGroup.course?.name ?? "—"}
+              <Truncated className="max-w-56">
+                {classGroup.course?.name}
+              </Truncated>
             </TableCell>
             <TableCell className="text-muted-foreground">
-              {classGroup.shift?.name ?? "—"}
+              <Truncated className="max-w-40">
+                {classGroup.shift?.name}
+              </Truncated>
             </TableCell>
             {canManage ? (
               <TableCell className="flex justify-end gap-2">
@@ -68,30 +73,20 @@ export function ClassGroupsTable({
                   classGroup={classGroup}
                   shiftOptions={shiftOptions}
                   courseOptions={courseOptions}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Editar ${classGroup.name}`}
-                    >
-                      <PencilIcon />
-                    </Button>
-                  }
+                  trigger={{
+                    icon: "edit",
+                    ariaLabel: `Editar ${classGroup.name}`,
+                  }}
                 />
                 <DeleteDialog
                   id={classGroup.id}
                   name={classGroup.name}
                   entityLabel="a turma"
                   action={deleteClassGroupAction}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Excluir ${classGroup.name}`}
-                    >
-                      <Trash2Icon />
-                    </Button>
-                  }
+                  trigger={{
+                    icon: "delete",
+                    ariaLabel: `Excluir ${classGroup.name}`,
+                  }}
                 />
               </TableCell>
             ) : null}

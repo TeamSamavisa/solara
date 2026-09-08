@@ -1,10 +1,9 @@
-import { PencilIcon, Trash2Icon } from "lucide-react"
 
+import { Truncated } from "@/components/shared/truncated"
 import { deleteUserAction } from "@/app/(authenticated)/users/actions"
 import { DeleteDialog } from "@/components/shared/delete-dialog"
 import { UserDialog } from "@/components/users/user-dialog"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -25,7 +24,7 @@ export function UsersTable({
 }) {
   if (users.length === 0) {
     return (
-      <p className="text-muted-foreground py-8 text-center text-sm">
+      <p className="py-8 text-center text-sm text-muted-foreground">
         Nenhum usuário encontrado.
       </p>
     )
@@ -47,12 +46,14 @@ export function UsersTable({
       <TableBody>
         {users.map((user) => (
           <TableRow key={user.id}>
-            <TableCell>{user.full_name}</TableCell>
-            <TableCell className="text-muted-foreground">
-              {user.email}
+            <TableCell>
+              <Truncated className="max-w-56">{user.full_name}</Truncated>
             </TableCell>
             <TableCell className="text-muted-foreground">
-              {user.registration ?? "—"}
+              <Truncated className="max-w-56">{user.email}</Truncated>
+            </TableCell>
+            <TableCell className="text-muted-foreground">
+              <Truncated className="max-w-32">{user.registration}</Truncated>
             </TableCell>
             <TableCell>
               <Badge variant="secondary">{roleLabel(user.role)}</Badge>
@@ -61,30 +62,20 @@ export function UsersTable({
               <TableCell className="flex justify-end gap-2">
                 <UserDialog
                   user={user}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Editar ${user.full_name}`}
-                    >
-                      <PencilIcon />
-                    </Button>
-                  }
+                  trigger={{
+                    icon: "edit",
+                    ariaLabel: `Editar ${user.full_name}`,
+                  }}
                 />
                 <DeleteDialog
                   id={user.id}
                   name={user.full_name}
                   entityLabel="o usuário"
                   action={deleteUserAction}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Excluir ${user.full_name}`}
-                    >
-                      <Trash2Icon />
-                    </Button>
-                  }
+                  trigger={{
+                    icon: "delete",
+                    ariaLabel: `Excluir ${user.full_name}`,
+                  }}
                 />
               </TableCell>
             ) : null}

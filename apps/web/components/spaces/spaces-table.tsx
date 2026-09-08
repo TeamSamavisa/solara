@@ -1,11 +1,10 @@
-import { PencilIcon, Trash2Icon } from "lucide-react"
 
+import { Truncated } from "@/components/shared/truncated"
 import { deleteSpaceAction } from "@/app/(authenticated)/spaces/actions"
 import { DeleteDialog } from "@/components/shared/delete-dialog"
 import type { SelectOption } from "@/components/shared/form-fields"
 import { SpaceDialog } from "@/components/spaces/space-dialog"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -27,7 +26,7 @@ export function SpacesTable({
 }) {
   if (spaces.length === 0) {
     return (
-      <p className="text-muted-foreground py-8 text-center text-sm">
+      <p className="py-8 text-center text-sm text-muted-foreground">
         Nenhum espaço encontrado.
       </p>
     )
@@ -50,11 +49,15 @@ export function SpacesTable({
       <TableBody>
         {spaces.map((space) => (
           <TableRow key={space.id}>
-            <TableCell>{space.name}</TableCell>
+            <TableCell>
+              <Truncated className="max-w-64">{space.name}</Truncated>
+            </TableCell>
             <TableCell>{space.floor}</TableCell>
             <TableCell>{space.capacity}</TableCell>
             <TableCell className="text-muted-foreground">
-              {space.spaceType?.name ?? "—"}
+              <Truncated className="max-w-48">
+                {space.spaceType?.name}
+              </Truncated>
             </TableCell>
             <TableCell>
               <Badge variant={space.blocked ? "destructive" : "secondary"}>
@@ -66,30 +69,17 @@ export function SpacesTable({
                 <SpaceDialog
                   space={space}
                   spaceTypeOptions={spaceTypeOptions}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Editar ${space.name}`}
-                    >
-                      <PencilIcon />
-                    </Button>
-                  }
+                  trigger={{ icon: "edit", ariaLabel: `Editar ${space.name}` }}
                 />
                 <DeleteDialog
                   id={space.id}
                   name={space.name}
                   entityLabel="o espaço"
                   action={deleteSpaceAction}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Excluir ${space.name}`}
-                    >
-                      <Trash2Icon />
-                    </Button>
-                  }
+                  trigger={{
+                    icon: "delete",
+                    ariaLabel: `Excluir ${space.name}`,
+                  }}
                 />
               </TableCell>
             ) : null}

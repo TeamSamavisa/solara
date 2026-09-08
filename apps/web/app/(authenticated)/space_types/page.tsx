@@ -1,11 +1,9 @@
-import { PlusIcon } from "lucide-react"
 import type { Metadata } from "next"
 
 import { FilterForm, PageHeader } from "@/components/shared/list-chrome"
 import { ListPagination } from "@/components/shared/list-pagination"
 import { SpaceTypeDialog } from "@/components/space-types/space-type-dialog"
 import { SpaceTypesTable } from "@/components/space-types/space-types-table"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -66,11 +64,7 @@ export default async function SpaceTypesPage({
 
             {canManage ? (
               <SpaceTypeDialog
-                trigger={
-                  <Button>
-                    <PlusIcon /> Adicionar Tipo de Espaço
-                  </Button>
-                }
+                trigger={{ icon: "add", label: "Adicionar Tipo de Espaço" }}
               />
             ) : null}
           </div>

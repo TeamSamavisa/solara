@@ -3,6 +3,10 @@
 import { useActionState, useState } from "react"
 import { toast } from "sonner"
 
+import {
+  DialogTriggerButton,
+  type DialogTriggerSpec,
+} from "@/components/shared/dialog-trigger"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -28,7 +32,7 @@ import type { FormState } from "@/lib/forms"
 
 export type EntityAction = (
   state: FormState | undefined,
-  formData: FormData,
+  formData: FormData
 ) => Promise<FormState | undefined>
 
 export interface EntityFieldsProps {
@@ -53,7 +57,7 @@ export function EntityDialog({
   withIdempotencyKey = false,
   renderFields,
 }: {
-  trigger: React.ReactNode
+  trigger: DialogTriggerSpec
   title: string
   description: string
   submitLabel: string
@@ -67,7 +71,7 @@ export function EntityDialog({
 
   // A fresh key per dialog session makes a replayed submit a server-side no-op.
   const [idempotencyKey, setIdempotencyKey] = useState(() =>
-    globalThis.crypto.randomUUID(),
+    globalThis.crypto.randomUUID()
   )
 
   const [state, formAction, pending] = useActionState<
@@ -89,8 +93,7 @@ export function EntityDialog({
   const fieldProps: EntityFieldsProps = {
     state,
     pending,
-    errorsFor: (name) =>
-      state?.errors?.[name]?.map((message) => ({ message })),
+    errorsFor: (name) => state?.errors?.[name]?.map((message) => ({ message })),
     isInvalid: (name) => Boolean(state?.errors?.[name]),
   }
 
@@ -106,7 +109,7 @@ export function EntityDialog({
       <div className="grid gap-4">{renderFields(fieldProps)}</div>
 
       {state?.message && !state.success ? (
-        <p role="alert" className="text-destructive mt-3 text-sm">
+        <p role="alert" className="mt-3 text-sm text-destructive">
           {state.message}
         </p>
       ) : null}
@@ -129,7 +132,9 @@ export function EntityDialog({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={setOpen}>
-        <DrawerTrigger asChild>{trigger}</DrawerTrigger>
+        <DrawerTrigger asChild>
+          <DialogTriggerButton {...trigger} />
+        </DrawerTrigger>
         <DrawerContent>
           <DrawerHeader className="text-left">
             <DrawerTitle>{title}</DrawerTitle>
@@ -149,7 +154,9 @@ export function EntityDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogTrigger asChild>
+        <DialogTriggerButton {...trigger} />
+      </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

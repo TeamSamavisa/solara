@@ -4,6 +4,7 @@ import {
   createCourseTypeAction,
   updateCourseTypeAction,
 } from "@/app/(authenticated)/course-types/actions"
+import type { DialogTriggerSpec } from "@/components/shared/dialog-trigger"
 import { EntityDialog } from "@/components/shared/entity-dialog"
 import { TextField } from "@/components/shared/form-fields"
 import type { CourseType } from "@solara/db/schemas"
@@ -13,7 +14,7 @@ export function CourseTypeDialog({
   trigger,
 }: {
   courseType?: CourseType
-  trigger: React.ReactNode
+  trigger: DialogTriggerSpec
 }) {
   const isEditing = Boolean(courseType)
 

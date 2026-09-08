@@ -1,10 +1,9 @@
-import { PencilIcon, Trash2Icon } from "lucide-react"
 
+import { Truncated } from "@/components/shared/truncated"
 import { deleteCourseAction } from "@/app/(authenticated)/courses/actions"
 import { CourseDialog } from "@/components/courses/course-dialog"
 import { DeleteDialog } from "@/components/shared/delete-dialog"
 import type { SelectOption } from "@/components/shared/form-fields"
-import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -26,7 +25,7 @@ export function CoursesTable({
 }) {
   if (courses.length === 0) {
     return (
-      <p className="text-muted-foreground py-8 text-center text-sm">
+      <p className="py-8 text-center text-sm text-muted-foreground">
         Nenhum curso encontrado.
       </p>
     )
@@ -46,39 +45,30 @@ export function CoursesTable({
       <TableBody>
         {courses.map((course) => (
           <TableRow key={course.id}>
-            <TableCell>{course.name}</TableCell>
+            <TableCell>
+              <Truncated className="max-w-72">{course.name}</Truncated>
+            </TableCell>
             <TableCell className="text-muted-foreground">
-              {course.courseType?.name ?? "—"}
+              <Truncated className="max-w-48">
+                {course.courseType?.name}
+              </Truncated>
             </TableCell>
             {canManage ? (
               <TableCell className="flex justify-end gap-2">
                 <CourseDialog
                   course={course}
                   courseTypeOptions={courseTypeOptions}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Editar ${course.name}`}
-                    >
-                      <PencilIcon />
-                    </Button>
-                  }
+                  trigger={{ icon: "edit", ariaLabel: `Editar ${course.name}` }}
                 />
                 <DeleteDialog
                   id={course.id}
                   name={course.name}
                   entityLabel="o curso"
                   action={deleteCourseAction}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Excluir ${course.name}`}
-                    >
-                      <Trash2Icon />
-                    </Button>
-                  }
+                  trigger={{
+                    icon: "delete",
+                    ariaLabel: `Excluir ${course.name}`,
+                  }}
                 />
               </TableCell>
             ) : null}

@@ -1,9 +1,8 @@
-import { PencilIcon, Trash2Icon } from "lucide-react"
 
+import { Truncated } from "@/components/shared/truncated"
 import { deleteShiftAction } from "@/app/(authenticated)/shifts/actions"
 import { DeleteDialog } from "@/components/shared/delete-dialog"
 import { ShiftDialog } from "@/components/shifts/shift-dialog"
-import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -23,7 +22,7 @@ export function ShiftsTable({
 }) {
   if (shifts.length === 0) {
     return (
-      <p className="text-muted-foreground py-8 text-center text-sm">
+      <p className="py-8 text-center text-sm text-muted-foreground">
         Nenhum turno encontrado.
       </p>
     )
@@ -42,35 +41,24 @@ export function ShiftsTable({
       <TableBody>
         {shifts.map((shift) => (
           <TableRow key={shift.id}>
-            <TableCell>{shift.name}</TableCell>
+            <TableCell>
+              <Truncated className="max-w-64">{shift.name}</Truncated>
+            </TableCell>
             {canManage ? (
               <TableCell className="flex justify-end gap-2">
                 <ShiftDialog
                   shift={shift}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Editar ${shift.name}`}
-                    >
-                      <PencilIcon />
-                    </Button>
-                  }
+                  trigger={{ icon: "edit", ariaLabel: `Editar ${shift.name}` }}
                 />
                 <DeleteDialog
                   id={shift.id}
                   name={shift.name}
                   entityLabel="o turno"
                   action={deleteShiftAction}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Excluir ${shift.name}`}
-                    >
-                      <Trash2Icon />
-                    </Button>
-                  }
+                  trigger={{
+                    icon: "delete",
+                    ariaLabel: `Excluir ${shift.name}`,
+                  }}
                 />
               </TableCell>
             ) : null}

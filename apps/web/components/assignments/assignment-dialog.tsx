@@ -4,6 +4,7 @@ import {
   createAssignmentAction,
   updateAssignmentAction,
 } from "@/app/(authenticated)/assignments/actions"
+import type { DialogTriggerSpec } from "@/components/shared/dialog-trigger"
 import type { AvailabilitySlot } from "@/components/availability/availability-grid"
 import { EntityDialog } from "@/components/shared/entity-dialog"
 import {
@@ -31,11 +32,11 @@ export function AssignmentDialog({
   classGroupOptions: SelectOption[]
   spaceOptions: SelectOption[]
   slots: AvailabilitySlot[]
-  trigger: React.ReactNode
+  trigger: DialogTriggerSpec
 }) {
   const isEditing = Boolean(assignment)
   const selected = new Set(
-    assignment?.schedules.map((schedule) => schedule.id) ?? [],
+    assignment?.schedules.map((schedule) => schedule.id) ?? []
   )
 
   return (
@@ -110,7 +111,7 @@ export function AssignmentDialog({
             <FieldLabel>Horários</FieldLabel>
             <div className="max-h-56 space-y-2 overflow-y-auto rounded-none border p-3">
               {slots.length === 0 ? (
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   Nenhum horário cadastrado.
                 </p>
               ) : (
