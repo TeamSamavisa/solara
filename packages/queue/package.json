@@ -1,0 +1,31 @@
+{
+  "name": "@solara/queue",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "//": "Shared transport contract between the web app (producer) and the worker (consumer): queue name, Redis connection and job name. Source is exported directly, like @solara/db.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./config": "./src/config.ts",
+    "./jobs": "./src/jobs.ts",
+    "./producer": "./src/producer.ts"
+  },
+  "scripts": {
+    "test": "jest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "bullmq": "6.3.2",
+    "ioredis": "6.0.0",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@swc/core": "1.16.1",
+    "@swc/jest": "0.2.39",
+    "@types/jest": "30.0.0",
+    "@types/node": "^20",
+    "jest": "30.5.0",
+    "ts-node": "10.9.2",
+    "typescript": "^5"
+  }
+}
