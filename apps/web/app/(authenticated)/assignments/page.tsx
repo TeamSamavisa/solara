@@ -1,16 +1,18 @@
-import { PlusIcon, TriangleAlertIcon } from "lucide-react"
 import type { Metadata } from "next"
 
+import {
+  getOptimizationStatus,
+  startOptimization,
+} from "@/app/actions/timetabling"
 import { AssignmentDialog } from "@/components/assignments/assignment-dialog"
 import { AssignmentsTable } from "@/components/assignments/assignments-table"
 import { AssignmentsTabs } from "@/components/assignments/assignments-tabs"
+import { OptimizationPanel } from "@/components/assignments/optimization-panel"
 import { PrintButton } from "@/components/assignments/print-button"
 import { TimetableGrid } from "@/components/assignments/timetable-grid"
 import { FilterForm, PageHeader } from "@/components/shared/list-chrome"
 import { ListPagination } from "@/components/shared/list-pagination"
 import { SelectFilter } from "@/components/shared/select-filter"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { requireRole } from "@/lib/auth/dal"
@@ -110,12 +112,12 @@ export default async function AssignmentsPage({
   // The class group list narrows to the chosen course, as in the legacy tab.
   const printClassGroups = printCourseId
     ? classGroups.content.filter(
-        (classGroup) => String(classGroup.course_id) === printCourseId,
+        (classGroup) => String(classGroup.course_id) === printCourseId
       )
     : []
 
   const printClassGroup = printClassGroups.find(
-    (classGroup) => String(classGroup.id) === printClassGroupId,
+    (classGroup) => String(classGroup.id) === printClassGroupId
   )
 
   // The optional shift filter matches the shift of the class group itself.
@@ -133,10 +135,10 @@ export default async function AssignmentsPage({
       : null
 
   const printCourse = courses.content.find(
-    (course) => String(course.id) === printCourseId,
+    (course) => String(course.id) === printCourseId
   )
   const printShift = shifts.content.find(
-    (shift) => String(shift.id) === printShiftId,
+    (shift) => String(shift.id) === printShiftId
   )
 
   const listPanel = (
@@ -200,11 +202,7 @@ export default async function AssignmentsPage({
           {canManage ? (
             <AssignmentDialog
               {...options}
-              trigger={
-                <Button>
-                  <PlusIcon /> Adicionar Alocação
-                </Button>
-              }
+              trigger={{ icon: "add", label: "Adicionar Alocação" }}
             />
           ) : null}
         </div>
@@ -226,15 +224,12 @@ export default async function AssignmentsPage({
   )
 
   const optimizePanel = (
-    <Alert>
-      <TriangleAlertIcon />
-      <AlertTitle>Otimização indisponível</AlertTitle>
-      <AlertDescription>
-        A geração automática da grade depende do serviço externo de
-        timetabling, que ainda não foi migrado. Enquanto isso, as alocações
-        podem ser criadas e ajustadas manualmente na aba Listagem.
-      </AlertDescription>
-    </Alert>
+    <OptimizationPanel
+      canManage={canManage}
+      initialStatus={await getOptimizationStatus()}
+      startAction={startOptimization}
+      statusAction={getOptimizationStatus}
+    />
   )
 
   const printPanel = (
@@ -298,13 +293,13 @@ export default async function AssignmentsPage({
         </div>
 
         {!printClassGroup ? (
-          <p className="text-muted-foreground py-12 text-center text-sm">
+          <p className="py-12 text-center text-sm text-muted-foreground">
             {printCourseId
               ? "Selecione uma turma para visualizar a grade horária."
               : "Selecione um curso e uma turma para visualizar a grade horária."}
           </p>
         ) : !shiftMatches ? (
-          <p className="text-muted-foreground py-12 text-center text-sm">
+          <p className="py-12 text-center text-sm text-muted-foreground">
             Esta turma não pertence ao turno selecionado.
           </p>
         ) : (
