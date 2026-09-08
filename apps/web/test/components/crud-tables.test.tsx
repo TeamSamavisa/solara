@@ -55,6 +55,8 @@ interface TableCase {
   label: string
   /** Text expected in the row when data is present. */
   expected: string[]
+  /** Free-text value expected to be clipped; defaults to the first one. */
+  truncated?: string
   /** Accessible name of the edit control for the first row. */
   editLabel: string
   emptyText: string
@@ -214,6 +216,7 @@ const cases: TableCase[] = [
   {
     label: "schedules",
     expected: ["Segunda", "07:30", "09:10", "Matutino"],
+    truncated: "Matutino",
     editLabel: "Editar Segunda 07:30-09:10",
     emptyText: "Nenhum horário encontrado.",
     renderWith: (canManage) => (
@@ -247,6 +250,18 @@ describe.each(cases)("$label table", (testCase) => {
     for (const text of testCase.expected) {
       expect(screen.getByText(text)).toBeInTheDocument()
     }
+  })
+
+  // Free-text columns hold names long enough to push the table out of the
+  // viewport, so they are clipped and the full value moves to the title.
+  it("clips the free-text column and keeps the full value in the title", () => {
+    render(testCase.renderWith(false))
+
+    const value = testCase.truncated ?? testCase.expected[0]
+    const element = screen.getByText(value)
+
+    expect(element).toHaveClass("truncate")
+    expect(element).toHaveAttribute("title", value)
   })
 
   it("hides the actions column from users who cannot manage", () => {
@@ -289,7 +304,7 @@ describe("schedules table", () => {
             },
           ] as never
         }
-      />,
+      />
     )
 
     expect(screen.getByText("Quarta")).toBeInTheDocument()
@@ -316,7 +331,7 @@ describe("spaces table", () => {
             },
           ] as never
         }
-      />,
+      />
     )
 
     expect(screen.getByText("Bloqueado")).toBeInTheDocument()

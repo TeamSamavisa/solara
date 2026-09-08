@@ -3,6 +3,10 @@
 import { useActionState, useState } from "react"
 import { toast } from "sonner"
 
+import {
+  DialogTriggerButton,
+  type DialogTriggerSpec,
+} from "@/components/shared/dialog-trigger"
 import type { EntityAction } from "@/components/shared/entity-dialog"
 import {
   AlertDialog,
@@ -25,7 +29,7 @@ export function DeleteDialog({
   entityLabel,
   name,
 }: {
-  trigger: React.ReactNode
+  trigger: DialogTriggerSpec
   id: number
   action: EntityAction
   /** e.g. "o turno", used in the sentence. */
@@ -52,7 +56,9 @@ export function DeleteDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
+      <AlertDialogTrigger asChild>
+        <DialogTriggerButton {...trigger} />
+      </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>

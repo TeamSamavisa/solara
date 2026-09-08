@@ -1,12 +1,12 @@
-import { PencilIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react"
+import { TriangleAlertIcon } from "lucide-react"
 
+import { Truncated } from "@/components/shared/truncated"
 import { deleteAssignmentAction } from "@/app/(authenticated)/assignments/actions"
 import { AssignmentDialog } from "@/components/assignments/assignment-dialog"
 import type { AvailabilitySlot } from "@/components/availability/availability-grid"
 import { DeleteDialog } from "@/components/shared/delete-dialog"
 import type { SelectOption } from "@/components/shared/form-fields"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -48,7 +48,7 @@ export function AssignmentsTable({
 }) {
   if (assignments.length === 0) {
     return (
-      <p className="text-muted-foreground py-8 text-center text-sm">
+      <p className="py-8 text-center text-sm text-muted-foreground">
         Nenhuma alocação encontrada.
       </p>
     )
@@ -72,7 +72,9 @@ export function AssignmentsTable({
         {assignments.map((assignment) => (
           <TableRow key={assignment.id}>
             <TableCell className="flex items-center gap-2">
-              {assignment.subject?.name ?? "—"}
+              <Truncated className="max-w-56">
+                {assignment.subject?.name}
+              </Truncated>
               {assignment.violates_availability ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -91,53 +93,49 @@ export function AssignmentsTable({
               ) : null}
             </TableCell>
             <TableCell className="text-muted-foreground">
-              {assignment.classGroup?.name ?? "—"}
+              <Truncated className="max-w-64">
+                {assignment.classGroup?.name}
+              </Truncated>
             </TableCell>
             <TableCell className="text-muted-foreground">
-              {assignment.teacher?.full_name ?? "—"}
+              <Truncated className="max-w-48">
+                {assignment.teacher?.full_name}
+              </Truncated>
             </TableCell>
             <TableCell className="text-muted-foreground">
-              {assignment.space?.name ?? "—"}
+              <Truncated className="max-w-48">
+                {assignment.space?.name}
+              </Truncated>
             </TableCell>
             <TableCell className="text-muted-foreground">
-              {assignment.schedules.length === 0
-                ? "—"
-                : assignment.schedules
-                    .map(
-                      (schedule) =>
-                        `${weekdayLabel(schedule.weekday)} ${schedule.start_time}`,
-                    )
-                    .join(", ")}
+              <Truncated className="max-w-64">
+                {assignment.schedules
+                  .map(
+                    (schedule) =>
+                      `${weekdayLabel(schedule.weekday)} ${schedule.start_time}`
+                  )
+                  .join(", ")}
+              </Truncated>
             </TableCell>
             {canManage ? (
               <TableCell className="flex justify-end gap-2">
                 <AssignmentDialog
                   assignment={assignment}
                   {...options}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Editar ${describe(assignment)}`}
-                    >
-                      <PencilIcon />
-                    </Button>
-                  }
+                  trigger={{
+                    icon: "edit",
+                    ariaLabel: `Editar ${describe(assignment)}`,
+                  }}
                 />
                 <DeleteDialog
                   id={assignment.id}
                   name={describe(assignment)}
                   entityLabel="a alocação"
                   action={deleteAssignmentAction}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Excluir ${describe(assignment)}`}
-                    >
-                      <Trash2Icon />
-                    </Button>
-                  }
+                  trigger={{
+                    icon: "delete",
+                    ariaLabel: `Excluir ${describe(assignment)}`,
+                  }}
                 />
               </TableCell>
             ) : null}

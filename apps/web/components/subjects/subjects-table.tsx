@@ -1,10 +1,9 @@
-import { PencilIcon, Trash2Icon } from "lucide-react"
 
+import { Truncated } from "@/components/shared/truncated"
 import { deleteSubjectAction } from "@/app/(authenticated)/subjects/actions"
 import { DeleteDialog } from "@/components/shared/delete-dialog"
 import type { SelectOption } from "@/components/shared/form-fields"
 import { SubjectDialog } from "@/components/subjects/subject-dialog"
-import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -28,7 +27,7 @@ export function SubjectsTable({
 }) {
   if (subjects.length === 0) {
     return (
-      <p className="text-muted-foreground py-8 text-center text-sm">
+      <p className="py-8 text-center text-sm text-muted-foreground">
         Nenhuma disciplina encontrada.
       </p>
     )
@@ -49,12 +48,16 @@ export function SubjectsTable({
       <TableBody>
         {subjects.map((subject) => (
           <TableRow key={subject.id}>
-            <TableCell>{subject.name}</TableCell>
-            <TableCell className="text-muted-foreground">
-              {subject.course?.name ?? "—"}
+            <TableCell>
+              <Truncated className="max-w-72">{subject.name}</Truncated>
             </TableCell>
             <TableCell className="text-muted-foreground">
-              {subject.requiredSpaceType?.name ?? "—"}
+              <Truncated className="max-w-56">{subject.course?.name}</Truncated>
+            </TableCell>
+            <TableCell className="text-muted-foreground">
+              <Truncated className="max-w-48">
+                {subject.requiredSpaceType?.name}
+              </Truncated>
             </TableCell>
             {canManage ? (
               <TableCell className="flex justify-end gap-2">
@@ -62,30 +65,20 @@ export function SubjectsTable({
                   subject={subject}
                   spaceTypeOptions={spaceTypeOptions}
                   courseOptions={courseOptions}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Editar ${subject.name}`}
-                    >
-                      <PencilIcon />
-                    </Button>
-                  }
+                  trigger={{
+                    icon: "edit",
+                    ariaLabel: `Editar ${subject.name}`,
+                  }}
                 />
                 <DeleteDialog
                   id={subject.id}
                   name={subject.name}
                   entityLabel="a disciplina"
                   action={deleteSubjectAction}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Excluir ${subject.name}`}
-                    >
-                      <Trash2Icon />
-                    </Button>
-                  }
+                  trigger={{
+                    icon: "delete",
+                    ariaLabel: `Excluir ${subject.name}`,
+                  }}
                 />
               </TableCell>
             ) : null}

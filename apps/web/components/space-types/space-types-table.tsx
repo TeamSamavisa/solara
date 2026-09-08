@@ -1,9 +1,8 @@
-import { PencilIcon, Trash2Icon } from "lucide-react"
 
+import { Truncated } from "@/components/shared/truncated"
 import { deleteSpaceTypeAction } from "@/app/(authenticated)/space_types/actions"
 import { DeleteDialog } from "@/components/shared/delete-dialog"
 import { SpaceTypeDialog } from "@/components/space-types/space-type-dialog"
-import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -23,7 +22,7 @@ export function SpaceTypesTable({
 }) {
   if (spaceTypes.length === 0) {
     return (
-      <p className="text-muted-foreground py-8 text-center text-sm">
+      <p className="py-8 text-center text-sm text-muted-foreground">
         Nenhum tipo de espaço encontrado.
       </p>
     )
@@ -42,35 +41,27 @@ export function SpaceTypesTable({
       <TableBody>
         {spaceTypes.map((spaceType) => (
           <TableRow key={spaceType.id}>
-            <TableCell>{spaceType.name}</TableCell>
+            <TableCell>
+              <Truncated className="max-w-64">{spaceType.name}</Truncated>
+            </TableCell>
             {canManage ? (
               <TableCell className="flex justify-end gap-2">
                 <SpaceTypeDialog
                   spaceType={spaceType}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Editar ${spaceType.name}`}
-                    >
-                      <PencilIcon />
-                    </Button>
-                  }
+                  trigger={{
+                    icon: "edit",
+                    ariaLabel: `Editar ${spaceType.name}`,
+                  }}
                 />
                 <DeleteDialog
                   id={spaceType.id}
                   name={spaceType.name}
                   entityLabel="o tipo de espaço"
                   action={deleteSpaceTypeAction}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Excluir ${spaceType.name}`}
-                    >
-                      <Trash2Icon />
-                    </Button>
-                  }
+                  trigger={{
+                    icon: "delete",
+                    ariaLabel: `Excluir ${spaceType.name}`,
+                  }}
                 />
               </TableCell>
             ) : null}

@@ -4,6 +4,7 @@ import {
   createClassGroupAction,
   updateClassGroupAction,
 } from "@/app/(authenticated)/class_groups/actions"
+import type { DialogTriggerSpec } from "@/components/shared/dialog-trigger"
 import { EntityDialog } from "@/components/shared/entity-dialog"
 import {
   NumberField,
@@ -22,7 +23,7 @@ export function ClassGroupDialog({
   classGroup?: ClassGroupWithRelations
   shiftOptions: SelectOption[]
   courseOptions: SelectOption[]
-  trigger: React.ReactNode
+  trigger: DialogTriggerSpec
 }) {
   const isEditing = Boolean(classGroup)
 

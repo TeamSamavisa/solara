@@ -4,6 +4,7 @@ import {
   createScheduleAction,
   updateScheduleAction,
 } from "@/app/(authenticated)/schedules/actions"
+import type { DialogTriggerSpec } from "@/components/shared/dialog-trigger"
 import { EntityDialog } from "@/components/shared/entity-dialog"
 import {
   SelectField,
@@ -25,7 +26,7 @@ export function ScheduleDialog({
 }: {
   schedule?: ScheduleWithShift
   shiftOptions: SelectOption[]
-  trigger: React.ReactNode
+  trigger: DialogTriggerSpec
 }) {
   const isEditing = Boolean(schedule)
 

@@ -4,6 +4,7 @@ import {
   createSubjectAction,
   updateSubjectAction,
 } from "@/app/(authenticated)/subjects/actions"
+import type { DialogTriggerSpec } from "@/components/shared/dialog-trigger"
 import { EntityDialog } from "@/components/shared/entity-dialog"
 import {
   SelectField,
@@ -21,7 +22,7 @@ export function SubjectDialog({
   subject?: SubjectWithRelations
   spaceTypeOptions: SelectOption[]
   courseOptions: SelectOption[]
-  trigger: React.ReactNode
+  trigger: DialogTriggerSpec
 }) {
   const isEditing = Boolean(subject)
 

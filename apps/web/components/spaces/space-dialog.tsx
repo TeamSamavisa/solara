@@ -4,6 +4,7 @@ import {
   createSpaceAction,
   updateSpaceAction,
 } from "@/app/(authenticated)/spaces/actions"
+import type { DialogTriggerSpec } from "@/components/shared/dialog-trigger"
 import { EntityDialog } from "@/components/shared/entity-dialog"
 import {
   NumberField,
@@ -25,7 +26,7 @@ export function SpaceDialog({
 }: {
   space?: SpaceWithType
   spaceTypeOptions: SelectOption[]
-  trigger: React.ReactNode
+  trigger: DialogTriggerSpec
 }) {
   const isEditing = Boolean(space)
 

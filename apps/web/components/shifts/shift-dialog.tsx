@@ -4,6 +4,7 @@ import {
   createShiftAction,
   updateShiftAction,
 } from "@/app/(authenticated)/shifts/actions"
+import type { DialogTriggerSpec } from "@/components/shared/dialog-trigger"
 import { EntityDialog } from "@/components/shared/entity-dialog"
 import { TextField } from "@/components/shared/form-fields"
 import type { Shift } from "@solara/db/schemas"
@@ -13,7 +14,7 @@ export function ShiftDialog({
   trigger,
 }: {
   shift?: Shift
-  trigger: React.ReactNode
+  trigger: DialogTriggerSpec
 }) {
   const isEditing = Boolean(shift)
 

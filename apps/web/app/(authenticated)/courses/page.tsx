@@ -1,11 +1,9 @@
-import { PlusIcon } from "lucide-react"
 import type { Metadata } from "next"
 
 import { CourseDialog } from "@/components/courses/course-dialog"
 import { CoursesTable } from "@/components/courses/courses-table"
 import { FilterForm, PageHeader } from "@/components/shared/list-chrome"
 import { ListPagination } from "@/components/shared/list-pagination"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -71,11 +69,7 @@ export default async function CoursesPage({
             {canManage ? (
               <CourseDialog
                 courseTypeOptions={courseTypeOptions}
-                trigger={
-                  <Button>
-                    <PlusIcon /> Adicionar Curso
-                  </Button>
-                }
+                trigger={{ icon: "add", label: "Adicionar Curso" }}
               />
             ) : null}
           </div>

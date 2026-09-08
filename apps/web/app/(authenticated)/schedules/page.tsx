@@ -1,4 +1,3 @@
-import { PlusIcon } from "lucide-react"
 import type { Metadata } from "next"
 
 import { ScheduleDialog } from "@/components/schedules/schedule-dialog"
@@ -6,7 +5,6 @@ import { SchedulesTable } from "@/components/schedules/schedules-table"
 import { FilterForm, PageHeader } from "@/components/shared/list-chrome"
 import { ListPagination } from "@/components/shared/list-pagination"
 import { SelectFilter } from "@/components/shared/select-filter"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { requireRole } from "@/lib/auth/dal"
@@ -74,11 +72,7 @@ export default async function SchedulesPage({
             {canManage ? (
               <ScheduleDialog
                 shiftOptions={shiftOptions}
-                trigger={
-                  <Button>
-                    <PlusIcon /> Adicionar Horário
-                  </Button>
-                }
+                trigger={{ icon: "add", label: "Adicionar Horário" }}
               />
             ) : null}
           </div>
