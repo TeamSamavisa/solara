@@ -9,6 +9,11 @@ describe("isAuthRoute", () => {
     expect(isAuthRoute("/login")).toBe(true)
   })
 
+  it("matches the account recovery pages", () => {
+    expect(isAuthRoute("/forgot-password")).toBe(true)
+    expect(isAuthRoute("/reset-password")).toBe(true)
+  })
+
   it("does not match anything else", () => {
     expect(isAuthRoute("/dashboard")).toBe(false)
     expect(isAuthRoute("/login/extra")).toBe(false)
@@ -49,6 +54,15 @@ describe("resolveRedirect while signed out", () => {
     expect(resolveRedirect({ pathname: "/login", hasSession: false })).toBeNull()
   })
 
+  it("lets the recovery pages render", () => {
+    expect(
+      resolveRedirect({ pathname: "/forgot-password", hasSession: false }),
+    ).toBeNull()
+    expect(
+      resolveRedirect({ pathname: "/reset-password", hasSession: false }),
+    ).toBeNull()
+  })
+
   it("sends the root to the login page", () => {
     expect(resolveRedirect({ pathname: "/", hasSession: false })).toBe("/login")
   })
@@ -71,6 +85,15 @@ describe("resolveRedirect while signed in", () => {
     expect(resolveRedirect({ pathname: "/login", hasSession: true })).toBe(
       "/dashboard",
     )
+  })
+
+  it("bounces the recovery pages to the dashboard", () => {
+    expect(
+      resolveRedirect({ pathname: "/forgot-password", hasSession: true }),
+    ).toBe("/dashboard")
+    expect(
+      resolveRedirect({ pathname: "/reset-password", hasSession: true }),
+    ).toBe("/dashboard")
   })
 
   it("sends the root to the dashboard", () => {

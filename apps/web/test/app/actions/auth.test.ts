@@ -1,9 +1,22 @@
 import { compare } from "bcryptjs"
 import { redirect } from "next/navigation"
 
-import { login, logout } from "@/app/actions/auth"
-import { INVALID_CREDENTIALS_MESSAGE } from "@/lib/auth/definitions"
+import {
+  login,
+  logout,
+  requestPasswordReset,
+  resetPassword,
+} from "@/app/actions/auth"
+import {
+  INVALID_CREDENTIALS_MESSAGE,
+  PASSWORD_RESET_REQUESTED_MESSAGE,
+} from "@/lib/auth/definitions"
 import { createSession, deleteSession } from "@/lib/auth/session"
+import { sendPasswordResetEmail } from "@/lib/mail/password-reset"
+import {
+  createPasswordResetToken,
+  resetPasswordWithToken,
+} from "@solara/db/actions/password-reset-tokens"
 import { getUserByEmail } from "@solara/db/actions/users"
 import { NotFoundError } from "@solara/db/errors"
 
@@ -18,6 +31,13 @@ jest.mock("@/lib/auth/session", () => ({
   deleteSession: jest.fn(),
 }))
 jest.mock("@solara/db/actions/users", () => ({ getUserByEmail: jest.fn() }))
+jest.mock("@solara/db/actions/password-reset-tokens", () => ({
+  createPasswordResetToken: jest.fn(),
+  resetPasswordWithToken: jest.fn(),
+}))
+jest.mock("@/lib/mail/password-reset", () => ({
+  sendPasswordResetEmail: jest.fn(),
+}))
 
 const mockCompare = compare as jest.MockedFunction<typeof compare>
 const mockCreateSession = createSession as jest.MockedFunction<
@@ -29,10 +49,19 @@ const mockDeleteSession = deleteSession as jest.MockedFunction<
 const mockGetUserByEmail = getUserByEmail as jest.MockedFunction<
   typeof getUserByEmail
 >
+const mockCreatePasswordResetToken =
+  createPasswordResetToken as jest.MockedFunction<
+    typeof createPasswordResetToken
+  >
+const mockResetPasswordWithToken =
+  resetPasswordWithToken as jest.MockedFunction<typeof resetPasswordWithToken>
+const mockSendPasswordResetEmail =
+  sendPasswordResetEmail as jest.MockedFunction<typeof sendPasswordResetEmail>
 const mockRedirect = redirect as unknown as jest.Mock
 
 const credentials = {
   id: 7,
+  full_name: "Ana Souza",
   email: "ana@example.com",
   role: "coordinator",
   password_hash: "$2b$10$hash",
@@ -176,6 +205,228 @@ describe("login redirect target", () => {
         }),
       ),
     ).rejects.toThrow("REDIRECT:/dashboard")
+  })
+})
+
+describe("requestPasswordReset validation", () => {
+  it("rejects a malformed email without querying the database", async () => {
+    const state = await requestPasswordReset(
+      undefined,
+      loginForm({ email: "nope" }),
+    )
+
+    expect(state?.errors?.email).toEqual(["Informe um e-mail válido."])
+    expect(mockGetUserByEmail).not.toHaveBeenCalled()
+    expect(mockSendPasswordResetEmail).not.toHaveBeenCalled()
+  })
+
+  it("echoes the submitted email back so the field is not cleared", async () => {
+    const state = await requestPasswordReset(
+      undefined,
+      loginForm({ email: "typo@" }),
+    )
+
+    expect(state?.email).toBe("typo@")
+  })
+})
+
+describe("requestPasswordReset", () => {
+  beforeEach(() => {
+    process.env.APP_URL = "https://solara.example.com"
+  })
+
+  afterEach(() => {
+    delete process.env.APP_URL
+  })
+
+  it("answers an unknown email with the generic message and sends nothing", async () => {
+    mockGetUserByEmail.mockRejectedValue(
+      new NotFoundError("Usuário não encontrado."),
+    )
+
+    const state = await requestPasswordReset(
+      undefined,
+      loginForm({ email: "ghost@example.com" }),
+    )
+
+    expect(state).toEqual({
+      success: true,
+      message: PASSWORD_RESET_REQUESTED_MESSAGE,
+    })
+    expect(mockCreatePasswordResetToken).not.toHaveBeenCalled()
+    expect(mockSendPasswordResetEmail).not.toHaveBeenCalled()
+  })
+
+  it("issues a token and emails the reset link when the account exists", async () => {
+    mockGetUserByEmail.mockResolvedValue(credentials)
+    mockCreatePasswordResetToken.mockResolvedValue("plain-token")
+
+    const state = await requestPasswordReset(
+      undefined,
+      loginForm({ email: "ana@example.com" }),
+    )
+
+    expect(mockCreatePasswordResetToken).toHaveBeenCalledWith(7)
+    expect(mockSendPasswordResetEmail).toHaveBeenCalledWith({
+      to: "ana@example.com",
+      name: "Ana Souza",
+      resetUrl: "https://solara.example.com/reset-password?token=plain-token",
+    })
+    expect(state).toEqual({
+      success: true,
+      message: PASSWORD_RESET_REQUESTED_MESSAGE,
+    })
+  })
+
+  it("shows the same message for known and unknown emails", async () => {
+    mockGetUserByEmail.mockResolvedValue(credentials)
+    mockCreatePasswordResetToken.mockResolvedValue("plain-token")
+    const known = await requestPasswordReset(
+      undefined,
+      loginForm({ email: "ana@example.com" }),
+    )
+
+    mockGetUserByEmail.mockRejectedValue(
+      new NotFoundError("Usuário não encontrado."),
+    )
+    const unknown = await requestPasswordReset(
+      undefined,
+      loginForm({ email: "ghost@example.com" }),
+    )
+
+    expect(known?.message).toBe(unknown?.message)
+  })
+
+  it("falls back to localhost when APP_URL is not configured", async () => {
+    delete process.env.APP_URL
+    mockGetUserByEmail.mockResolvedValue(credentials)
+    mockCreatePasswordResetToken.mockResolvedValue("plain-token")
+
+    await requestPasswordReset(
+      undefined,
+      loginForm({ email: "ana@example.com" }),
+    )
+
+    expect(mockSendPasswordResetEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        resetUrl: "http://localhost:3000/reset-password?token=plain-token",
+      }),
+    )
+  })
+
+  it("reports a failure instead of pretending the email was sent", async () => {
+    mockGetUserByEmail.mockResolvedValue(credentials)
+    mockCreatePasswordResetToken.mockResolvedValue("plain-token")
+    mockSendPasswordResetEmail.mockRejectedValue(new Error("SMTP down"))
+
+    const state = await requestPasswordReset(
+      undefined,
+      loginForm({ email: "ana@example.com" }),
+    )
+
+    expect(state?.success).toBeUndefined()
+    expect(state?.message).toBe(
+      "Não foi possível enviar o e-mail de recuperação. Tente novamente mais tarde.",
+    )
+  })
+})
+
+describe("resetPassword validation", () => {
+  it("rejects mismatched passwords without touching the database", async () => {
+    const state = await resetPassword(
+      undefined,
+      loginForm({
+        token: "plain-token",
+        password: "secret123",
+        confirmPassword: "different",
+      }),
+    )
+
+    expect(state?.errors?.confirmPassword).toEqual([
+      "As senhas não coincidem.",
+    ])
+    expect(mockResetPasswordWithToken).not.toHaveBeenCalled()
+  })
+
+  it("rejects a short password", async () => {
+    const state = await resetPassword(
+      undefined,
+      loginForm({
+        token: "plain-token",
+        password: "123",
+        confirmPassword: "123",
+      }),
+    )
+
+    expect(state?.errors?.password).toEqual([
+      "A senha deve ter ao menos 6 caracteres.",
+    ])
+    expect(mockResetPasswordWithToken).not.toHaveBeenCalled()
+  })
+
+  it("reports a missing token as a form-level error", async () => {
+    const state = await resetPassword(
+      undefined,
+      loginForm({ password: "secret123", confirmPassword: "secret123" }),
+    )
+
+    expect(state?.message).toBe("Token de recuperação inválido ou expirado.")
+    expect(state?.errors).toBeUndefined()
+    expect(mockResetPasswordWithToken).not.toHaveBeenCalled()
+  })
+})
+
+describe("resetPassword", () => {
+  it("resets the password and redirects to the login page", async () => {
+    mockResetPasswordWithToken.mockResolvedValue(undefined)
+
+    await expect(
+      resetPassword(
+        undefined,
+        loginForm({
+          token: "plain-token",
+          password: "secret123",
+          confirmPassword: "secret123",
+        }),
+      ),
+    ).rejects.toThrow("REDIRECT:/login")
+
+    expect(mockResetPasswordWithToken).toHaveBeenCalledWith(
+      "plain-token",
+      "secret123",
+    )
+  })
+
+  it("shows the token error raised by the database", async () => {
+    mockResetPasswordWithToken.mockRejectedValue(
+      new NotFoundError("Token de recuperação inválido ou expirado."),
+    )
+
+    const state = await resetPassword(
+      undefined,
+      loginForm({
+        token: "stale-token",
+        password: "secret123",
+        confirmPassword: "secret123",
+      }),
+    )
+
+    expect(state?.message).toBe("Token de recuperação inválido ou expirado.")
+  })
+
+  it("hides unexpected failures behind a generic message", async () => {
+    mockResetPasswordWithToken.mockRejectedValue(new Error("db down"))
+
+    const state = await resetPassword(
+      undefined,
+      loginForm({
+        token: "plain-token",
+        password: "secret123",
+        confirmPassword: "secret123",
+      }),
+    )
+
+    expect(state?.message).toBe("Não foi possível redefinir a senha.")
   })
 })
 
