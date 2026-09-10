@@ -1,7 +1,11 @@
 import { DEFAULT_REDIRECT } from "./definitions"
 
 /** Routes that only make sense while signed out. */
-export const AUTH_ROUTES = ["/login"] as const
+export const AUTH_ROUTES = [
+  "/login",
+  "/forgot-password",
+  "/reset-password",
+] as const
 
 /**
  * Routes that must render for everyone. The 403 page in particular has to stay

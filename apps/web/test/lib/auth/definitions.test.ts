@@ -1,6 +1,8 @@
 import {
   DEFAULT_REDIRECT,
+  forgotPasswordSchema,
   loginSchema,
+  resetPasswordSchema,
   safeRedirectPath,
 } from "@/lib/auth/definitions"
 
@@ -38,6 +40,79 @@ describe("loginSchema", () => {
   it("reports both fields at once", () => {
     const result = loginSchema.safeParse({ email: "nope", password: "" })
     expect(result.error?.issues).toHaveLength(2)
+  })
+})
+
+describe("forgotPasswordSchema", () => {
+  it("accepts a valid email and trims it", () => {
+    expect(
+      forgotPasswordSchema.parse({ email: "  ana@example.com  " }),
+    ).toEqual({ email: "ana@example.com" })
+  })
+
+  it.each(["", "ana", "ana@", "@example.com"])("rejects %p", (email) => {
+    const result = forgotPasswordSchema.safeParse({ email })
+    expect(result.success).toBe(false)
+    expect(result.error?.issues[0]?.message).toBe("Informe um e-mail válido.")
+  })
+})
+
+describe("resetPasswordSchema", () => {
+  it("accepts a token with matching passwords", () => {
+    expect(
+      resetPasswordSchema.parse({
+        token: "abc123",
+        password: "secret123",
+        confirmPassword: "secret123",
+      }),
+    ).toEqual({
+      token: "abc123",
+      password: "secret123",
+      confirmPassword: "secret123",
+    })
+  })
+
+  it("requires the token from the recovery link", () => {
+    const result = resetPasswordSchema.safeParse({
+      token: "",
+      password: "secret123",
+      confirmPassword: "secret123",
+    })
+    expect(result.success).toBe(false)
+    expect(result.error?.issues[0]?.path).toEqual(["token"])
+  })
+
+  it("rejects a password shorter than six characters", () => {
+    const result = resetPasswordSchema.safeParse({
+      token: "abc123",
+      password: "123",
+      confirmPassword: "123",
+    })
+    expect(result.success).toBe(false)
+    expect(result.error?.issues[0]?.message).toBe(
+      "A senha deve ter ao menos 6 caracteres.",
+    )
+  })
+
+  it("requires the confirmation", () => {
+    const result = resetPasswordSchema.safeParse({
+      token: "abc123",
+      password: "secret123",
+      confirmPassword: "",
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it("reports mismatched passwords on the confirmation field", () => {
+    const result = resetPasswordSchema.safeParse({
+      token: "abc123",
+      password: "secret123",
+      confirmPassword: "different",
+    })
+    expect(result.success).toBe(false)
+    const issue = result.error?.issues[0]
+    expect(issue?.path).toEqual(["confirmPassword"])
+    expect(issue?.message).toBe("As senhas não coincidem.")
   })
 })
 
