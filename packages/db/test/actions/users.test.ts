@@ -249,6 +249,7 @@ describe("getUserByEmail", () => {
   it("returns the credentials needed to authenticate", async () => {
     const credentials = {
       id: 5,
+      full_name: "Ana Souza",
       email: "ana@example.com",
       role: "teacher",
       password_hash: "hashed:secret123",
