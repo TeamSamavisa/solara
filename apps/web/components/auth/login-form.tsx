@@ -1,6 +1,7 @@
 "use client"
 
 import { EyeIcon, EyeOffIcon } from "lucide-react"
+import Link from "next/link"
 import { useActionState, useState } from "react"
 
 import { login } from "@/app/actions/auth"
@@ -50,7 +51,15 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
         </Field>
 
         <Field data-invalid={Boolean(state?.errors?.password) || undefined}>
-          <FieldLabel htmlFor="password">Senha</FieldLabel>
+          <div className="flex items-center justify-between">
+            <FieldLabel htmlFor="password">Senha</FieldLabel>
+            <Link
+              href="/forgot-password"
+              className="text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+            >
+              Esqueceu sua senha?
+            </Link>
+          </div>
           <div className="relative">
             <Input
               id="password"

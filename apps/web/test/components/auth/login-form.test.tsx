@@ -40,6 +40,14 @@ describe("LoginForm rendering", () => {
     expect(screen.getByLabelText("Senha")).toHaveAttribute("type", "password")
   })
 
+  it("links to the password recovery page", () => {
+    render(<LoginForm />)
+
+    expect(
+      screen.getByRole("link", { name: "Esqueceu sua senha?" })
+    ).toHaveAttribute("href", "/forgot-password")
+  })
+
   it("carries the redirect target as a hidden field", () => {
     const { container } = render(<LoginForm redirectTo="/teachers" />)
 
