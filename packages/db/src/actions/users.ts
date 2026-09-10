@@ -109,9 +109,13 @@ export async function getUserById(id: number): Promise<PublicUser> {
   return requireFound(row, NOT_FOUND)
 }
 
-/** Returns the password hash, so it is only meant for authentication. */
+/**
+ * Returns the password hash, so it is only meant for authentication and
+ * account recovery (which needs the name to personalise the e-mail).
+ */
 export async function getUserByEmail(email: string): Promise<{
   id: number
+  full_name: string
   email: string
   role: string
   password_hash: string
@@ -119,6 +123,7 @@ export async function getUserByEmail(email: string): Promise<{
   const [row] = await db
     .select({
       id: users.id,
+      full_name: users.full_name,
       email: users.email,
       role: users.role,
       password_hash: users.password_hash,
