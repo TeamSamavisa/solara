@@ -1,4 +1,4 @@
-import { SignJWT } from "jose"
+import { generateKeyPair, SignJWT, UnsecuredJWT } from "jose"
 import { cookies } from "next/headers"
 
 import {
@@ -8,6 +8,7 @@ import {
   encrypt,
   getSession,
   SESSION_COOKIE,
+  SESSION_DURATION_MS,
 } from "@/lib/auth/session"
 
 jest.mock("next/headers", () => ({ cookies: jest.fn() }))
@@ -36,11 +37,21 @@ describe("encrypt / decrypt", () => {
     expect(payload).toMatchObject({ userId: 7, role: "coordinator" })
   })
 
-  it("produces an opaque token that does not leak the role in clear text", async () => {
+  it("carries only the session claims, readable by anyone holding the token", async () => {
     const token = await encrypt({ userId: 7, role: "admin" })
 
-    expect(token.split(".")).toHaveLength(3)
-    expect(token).not.toContain("admin=")
+    // A JWT is signed, not encrypted: the payload is base64url for all to
+    // read, so it must never grow claims beyond what the session needs.
+    const payload = JSON.parse(
+      Buffer.from(token.split(".")[1], "base64url").toString(),
+    )
+
+    expect(Object.keys(payload).sort()).toEqual([
+      "exp",
+      "iat",
+      "role",
+      "userId",
+    ])
   })
 
   it("returns null for an undefined or empty session", async () => {
@@ -50,6 +61,34 @@ describe("encrypt / decrypt", () => {
 
   it("returns null for a malformed token", async () => {
     await expect(decrypt("not-a-jwt")).resolves.toBeNull()
+  })
+
+  it("rejects an unsigned token (alg: none)", async () => {
+    const unsigned = new UnsecuredJWT({ userId: 1, role: "admin" }).encode()
+
+    await expect(decrypt(unsigned)).resolves.toBeNull()
+  })
+
+  it("rejects a token from a different algorithm family (RS256)", async () => {
+    // Classic algorithm-confusion: even a validly signed RS256 token must
+    // not be accepted by a verifier that only allows HS256.
+    const { privateKey } = await generateKeyPair("RS256")
+    const confused = await new SignJWT({ userId: 1, role: "admin" })
+      .setProtectedHeader({ alg: "RS256" })
+      .setIssuedAt()
+      .setExpirationTime("7d")
+      .sign(privateKey)
+
+    await expect(decrypt(confused)).resolves.toBeNull()
+  })
+
+  it("signs the token for exactly the seven days the cookie lasts", async () => {
+    const token = await encrypt({ userId: 7, role: "admin" })
+    const payload = JSON.parse(
+      Buffer.from(token.split(".")[1], "base64url").toString(),
+    )
+
+    expect(payload.exp - payload.iat).toBe(SESSION_DURATION_MS / 1000)
   })
 
   it("rejects a token signed with a different secret", async () => {
@@ -109,7 +148,11 @@ describe("createSession", () => {
       path: "/",
     })
     expect(options.expires).toBeInstanceOf(Date)
-    expect(options.expires.getTime()).toBeGreaterThan(Date.now())
+    // The cookie must live for the whole session window — not a minute, not
+    // a day — or users would be logged out early (or far too late).
+    const expected = Date.now() + SESSION_DURATION_MS
+    expect(options.expires.getTime()).toBeGreaterThan(expected - 5000)
+    expect(options.expires.getTime()).toBeLessThanOrEqual(expected)
   })
 
   it("does not require https outside production, so local dev works", async () => {
