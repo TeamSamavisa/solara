@@ -3,6 +3,8 @@ import {
   hasExactRole,
   hasRole,
   isRole,
+  ROLE_LABELS,
+  roleLabel,
   ROLES,
   type Role,
 } from "@/lib/auth/roles"
@@ -68,5 +70,31 @@ describe("hasExactRole", () => {
     expect(hasExactRole("admin", "admin")).toBe(true)
     expect(hasExactRole("admin", "principal")).toBe(false)
     expect(hasExactRole(undefined, "admin")).toBe(false)
+  })
+})
+
+describe("ROLE_LABELS", () => {
+  it("has a label for every role, so a new role cannot ship unlabeled", () => {
+    expect(Object.keys(ROLE_LABELS).sort()).toEqual([...ROLES].sort())
+  })
+})
+
+describe("roleLabel", () => {
+  it.each([
+    ["admin", "Administrador"],
+    ["principal", "Diretor"],
+    ["coordinator", "Coordenador"],
+    ["teacher", "Professor"],
+  ])("labels %s as %s", (role, label) => {
+    expect(roleLabel(role)).toBe(label)
+  })
+
+  it("falls back to the raw value for an unknown role", () => {
+    expect(roleLabel("root")).toBe("root")
+  })
+
+  it("falls back to a dash when the role is missing", () => {
+    expect(roleLabel(null)).toBe("—")
+    expect(roleLabel(undefined)).toBe("—")
   })
 })
