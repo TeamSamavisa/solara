@@ -10,13 +10,26 @@ function requiredEnv(name: string): string {
   return value
 }
 
+function smtpPort(): number {
+  const raw = process.env.SMTP_PORT ?? "587"
+  const port = Number(raw)
+
+  if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+    throw new Error(
+      `A variável de ambiente SMTP_PORT tem valor inválido: "${raw}".`
+    )
+  }
+
+  return port
+}
+
 /**
  * Builds an SMTP transporter from the environment. Transporters are cheap to
  * create — the connection only opens on `sendMail` — so reading the env on
  * every call keeps configuration changes (and tests) predictable.
  */
 export function createMailTransporter(): Transporter {
-  const port = Number(process.env.SMTP_PORT ?? 587)
+  const port = smtpPort()
   const user = process.env.SMTP_USER
 
   return nodemailer.createTransport({
