@@ -6,10 +6,12 @@ import { redirect } from "next/navigation"
 import {
   INVALID_CREDENTIALS_MESSAGE,
   PASSWORD_RESET_REQUESTED_MESSAGE,
+  firstAccessSchema,
   forgotPasswordSchema,
   loginSchema,
   resetPasswordSchema,
   safeRedirectPath,
+  type FirstAccessFormState,
   type ForgotPasswordFormState,
   type LoginFormState,
   type ResetPasswordFormState,
@@ -18,6 +20,7 @@ import { isRole } from "@/lib/auth/roles"
 import { createSession, deleteSession } from "@/lib/auth/session"
 import { errorToFormState, toFieldErrors } from "@/lib/forms"
 import { sendPasswordResetEmail } from "@/lib/mail/password-reset"
+import { activateAccountWithToken } from "@solara/db/actions/first-access-tokens"
 import {
   createPasswordResetToken,
   resetPasswordWithToken,
@@ -41,7 +44,7 @@ const DUMMY_HASH =
 
 export async function login(
   _state: LoginFormState | undefined,
-  formData: FormData,
+  formData: FormData
 ): Promise<LoginFormState | undefined> {
   const submittedEmail = formData.get("email")
   const validated = loginSchema.safeParse({
@@ -61,7 +64,7 @@ export async function login(
 
   const passwordMatches = await compare(
     password,
-    credentials?.password_hash ?? DUMMY_HASH,
+    credentials?.password_hash ?? DUMMY_HASH
   )
 
   // The same message for an unknown e-mail, a wrong password and a corrupted
@@ -95,7 +98,7 @@ function appBaseUrl(): string {
  */
 export async function requestPasswordReset(
   _state: ForgotPasswordFormState | undefined,
-  formData: FormData,
+  formData: FormData
 ): Promise<ForgotPasswordFormState> {
   const submittedEmail = formData.get("email")
   const validated = forgotPasswordSchema.safeParse({ email: submittedEmail })
@@ -138,7 +141,7 @@ export async function requestPasswordReset(
  */
 export async function resetPassword(
   _state: ResetPasswordFormState | undefined,
-  formData: FormData,
+  formData: FormData
 ): Promise<ResetPasswordFormState | undefined> {
   const validated = resetPasswordSchema.safeParse({
     token: formData.get("token"),
@@ -148,7 +151,7 @@ export async function resetPassword(
 
   if (!validated.success) {
     const errors = toFieldErrors<"token" | "password" | "confirmPassword">(
-      validated.error,
+      validated.error
     )
 
     // The token arrives in a hidden field, so there is no input to attach the
@@ -166,6 +169,47 @@ export async function resetPassword(
     await resetPasswordWithToken(token, password)
   } catch (error) {
     return errorToFormState(error, "Não foi possível redefinir a senha.")
+  }
+
+  redirect("/login")
+}
+
+/**
+ * Completes the first-access flow from the token in the e-mail link: choosing
+ * the first password is what validates a freshly created account.
+ *
+ * `redirect` throws to unwind the action, so it stays outside of try/catch.
+ */
+export async function activateAccount(
+  _state: FirstAccessFormState | undefined,
+  formData: FormData
+): Promise<FirstAccessFormState | undefined> {
+  const validated = firstAccessSchema.safeParse({
+    token: formData.get("token"),
+    password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
+  })
+
+  if (!validated.success) {
+    const errors = toFieldErrors<"token" | "password" | "confirmPassword">(
+      validated.error
+    )
+
+    // The token arrives in a hidden field, so there is no input to attach the
+    // error to; it becomes a form-level message instead.
+    if (errors.token) {
+      return { message: errors.token[0] }
+    }
+
+    return { errors }
+  }
+
+  const { token, password } = validated.data
+
+  try {
+    await activateAccountWithToken(token, password)
+  } catch (error) {
+    return errorToFormState(error, "Não foi possível ativar a conta.")
   }
 
   redirect("/login")

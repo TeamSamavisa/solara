@@ -5,6 +5,7 @@ export const AUTH_ROUTES = [
   "/login",
   "/forgot-password",
   "/reset-password",
+  "/first-access",
 ] as const
 
 /**
@@ -21,7 +22,7 @@ export function isAuthRoute(pathname: string): boolean {
 
 export function isNeutralRoute(pathname: string): boolean {
   return NEUTRAL_ROUTE_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   )
 }
 

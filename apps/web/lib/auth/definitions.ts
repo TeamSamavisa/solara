@@ -10,7 +10,7 @@ export const loginSchema = z.object({
   // validate the untrimmed value and reject "  ana@example.com  ".
   email: z.preprocess(
     (value) => (typeof value === "string" ? value.trim() : value),
-    z.email({ error: "Informe um e-mail válido." }),
+    z.email({ error: "Informe um e-mail válido." })
   ),
   password: z.string().min(1, { error: "Informe sua senha." }),
 })
@@ -36,7 +36,7 @@ export const INVALID_CREDENTIALS_MESSAGE = "E-mail ou senha inválidos."
 export const forgotPasswordSchema = z.object({
   email: z.preprocess(
     (value) => (typeof value === "string" ? value.trim() : value),
-    z.email({ error: "Informe um e-mail válido." }),
+    z.email({ error: "Informe um e-mail válido." })
   ),
 })
 
@@ -80,6 +80,35 @@ export interface ResetPasswordFormState {
   message?: string
 }
 
+/**
+ * First access, from the link a new user receives by e-mail. Distinct from
+ * the recovery flow so each token table only serves one purpose.
+ */
+export const firstAccessSchema = z
+  .object({
+    token: z
+      .string({ error: "Token de primeiro acesso inválido ou expirado." })
+      .min(1, { error: "Token de primeiro acesso inválido ou expirado." }),
+    password: z
+      .string()
+      .min(6, { error: "A senha deve ter ao menos 6 caracteres." }),
+    confirmPassword: z.string().min(1, { error: "Confirme a senha." }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    error: "As senhas não coincidem.",
+    path: ["confirmPassword"],
+  })
+
+export type FirstAccessInput = z.infer<typeof firstAccessSchema>
+
+export interface FirstAccessFormState {
+  errors?: {
+    password?: string[]
+    confirmPassword?: string[]
+  }
+  message?: string
+}
+
 export const DEFAULT_REDIRECT = "/dashboard"
 
 /**
@@ -88,7 +117,7 @@ export const DEFAULT_REDIRECT = "/dashboard"
  */
 export function safeRedirectPath(
   value: unknown,
-  fallback: string = DEFAULT_REDIRECT,
+  fallback: string = DEFAULT_REDIRECT
 ): string {
   if (typeof value !== "string" || value.length === 0) return fallback
 
