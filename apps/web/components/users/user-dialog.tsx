@@ -65,17 +65,20 @@ export function UserDialog({
             defaultValue={user?.registration ?? ""}
             required={false}
           />
-          <TextField
-            {...props}
-            name="password"
-            label={isEditing ? "Nova senha" : "Senha"}
-            placeholder={
-              isEditing
-                ? "Deixe em branco para manter"
-                : "Deixe em branco para gerar automaticamente"
-            }
-            required={false}
-          />
+          {isEditing ? (
+            <TextField
+              {...props}
+              name="password"
+              label="Nova senha"
+              placeholder="Deixe em branco para manter"
+              required={false}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              O usuário receberá um e-mail com instruções para validar a conta e
+              definir a senha de acesso.
+            </p>
+          )}
           <SelectField
             {...props}
             name="role"
