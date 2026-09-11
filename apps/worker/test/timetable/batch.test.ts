@@ -1,20 +1,13 @@
 import { mutationBatchSize } from "@/timetable/optimize"
 
 /**
- * The original sorts every class by cost, takes the first quarter of that
- * list and skips the zero-cost entries inside the window. Taking a quarter of
- * the *non-zero* entries instead — as this port first did — collapses to a
- * single mutation per iteration as soon as the timetable is nearly solved,
- * which is exactly when the remaining conflicts need the most attempts.
+ * The legacy service mutates a quarter of the timetable per annealing
+ * iteration, rounding down — so a timetable with fewer than four classes was
+ * never touched at all. This port keeps at least one.
  */
 describe("mutationBatchSize", () => {
-  it("is a quarter of the whole timetable, not of what is still broken", () => {
+  it("is a quarter of the whole timetable", () => {
     expect(mutationBatchSize(289)).toBe(72)
-  })
-
-  it("covers every conflict while few remain", () => {
-    // 289 allocations with 4 conflicts: all 4 fall inside the window.
-    expect(mutationBatchSize(289)).toBeGreaterThanOrEqual(4)
   })
 
   it("rounds down, like the original", () => {

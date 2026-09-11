@@ -4,8 +4,6 @@ import type { OptimizeEvent } from "@/timetable/events"
 import { buildInput } from "@test/support/timetable"
 
 const fastOptions = {
-  evolutionRuns: 2,
-  maxStagnation: 5,
   annealingIterations: 300,
 }
 
@@ -84,30 +82,13 @@ describe("optimization events", () => {
     })
   })
 
-  it("announces each evolution run with the current sigma", () => {
-    const runs = collect().filter((event) => event.type === "evolution-run")
+  it("says so when placement already satisfies every hard constraint", () => {
+    // There is no evolution phase: placement takes the first conflict-free
+    // spot for each class, so a clean result is known right away.
+    const events = collect()
 
-    expect(runs.length).toBeGreaterThan(0)
-    expect(runs[0]).toMatchObject({ run: 1, runs: 2, sigma: expect.any(Number) })
-  })
-
-  it("reports the iterations and the cost a run ended on", () => {
-    const results = collect().filter(
-      (event) => event.type === "evolution-result",
-    )
-
-    expect(results.length).toBeGreaterThan(0)
-    expect(results[0]).toMatchObject({
-      run: 1,
-      iterations: expect.any(Number),
-      cost: { total: expect.any(Number) },
-    })
-  })
-
-  it("says so when it reaches a conflict-free timetable", () => {
-    const optimal = collect().find((event) => event.type === "optimal")
-
-    expect(optimal).toMatchObject({ run: 1, iterations: expect.any(Number) })
+    expect(events.some((event) => event.type === "optimal")).toBe(true)
+    expect(events.some((event) => event.type === "conflicts")).toBe(false)
   })
 
   it("reports annealing progress periodically, not on every iteration", () => {
@@ -142,10 +123,10 @@ describe("optimization events", () => {
     expect(types.indexOf("prepared")).toBeLessThan(
       types.indexOf("initial-placement"),
     )
-    expect(types.indexOf("initial-cost")).toBeLessThan(
-      types.indexOf("evolution-run"),
+    expect(types.indexOf("initial-placement")).toBeLessThan(
+      types.indexOf("initial-cost"),
     )
-    expect(types.indexOf("evolution-run")).toBeLessThan(
+    expect(types.indexOf("initial-cost")).toBeLessThan(
       types.indexOf("statistics"),
     )
   })
@@ -185,27 +166,29 @@ describe("optimization events", () => {
 })
 
 describe("conflict reporting", () => {
-  it("explains what is still broken after the last run", () => {
+  it("explains what is still broken when no clean placement exists", () => {
     const input = buildInput()
-    const events = collect(
-      {
-        ...input,
-        // One usable slot and one class group: the two classes must overlap.
-        schedules: input.schedules.slice(0, 1),
-        teacher_schedules: {},
-        class_allocations: input.class_allocations.map((allocation) => ({
-          ...allocation,
-          class_group_id: 30,
-        })),
-      },
-      { ...fastOptions, evolutionRuns: 1, maxStagnation: 2 },
-    )
+    const events = collect({
+      ...input,
+      // One usable slot and one class group: the two classes must overlap.
+      schedules: input.schedules.slice(0, 1),
+      teacher_schedules: {},
+      class_allocations: input.class_allocations.map((allocation) => ({
+        ...allocation,
+        class_group_id: 30,
+      })),
+    })
 
-    const conflicts = events.find((event) => event.type === "conflicts")
+    const conflicts = events.filter((event) => event.type === "conflicts")
 
+    expect(conflicts).toHaveLength(1)
     expect(
-      conflicts?.type === "conflicts" && conflicts.conflicts.length,
+      conflicts[0].type === "conflicts" && conflicts[0].conflicts.length,
     ).toBeGreaterThan(0)
+    // The verdict comes before the annealing: it cannot fix hard conflicts.
+    expect(typesOf(events).indexOf("conflicts")).toBeLessThan(
+      typesOf(events).indexOf("statistics"),
+    )
   })
 
   it("says nothing about conflicts once the timetable is clean", () => {

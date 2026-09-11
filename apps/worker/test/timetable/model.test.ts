@@ -10,9 +10,50 @@ describe("timetableInputSchema", () => {
   it("fills in every collection when the payload is empty", () => {
     const parsed = timetableInputSchema.parse({})
 
+    // Every single one: an earlier version of this test checked only three
+    // collections, and a broken default on the others went unnoticed.
+    expect(parsed.space_types).toEqual([])
     expect(parsed.classrooms).toEqual([])
+    expect(parsed.course_types).toEqual([])
+    expect(parsed.courses).toEqual([])
+    expect(parsed.shifts).toEqual([])
+    expect(parsed.teachers).toEqual([])
+    expect(parsed.subjects).toEqual([])
+    expect(parsed.schedules).toEqual([])
+    expect(parsed.class_groups).toEqual([])
     expect(parsed.class_allocations).toEqual([])
     expect(parsed.teacher_schedules).toEqual({})
+  })
+
+  it.each([
+    { collection: "space_types", entry: { id: 1 } },
+    { collection: "classrooms", entry: { id: 1, name: "S", floor: 0 } },
+    { collection: "course_types", entry: { id: 1 } },
+    { collection: "courses", entry: { id: 1 } },
+    { collection: "shifts", entry: { id: 1 } },
+    { collection: "teachers", entry: { id: 1 } },
+    { collection: "subjects", entry: { id: 1, name: "D" } },
+    { collection: "schedules", entry: { id: 1, weekday: "Monday" } },
+    { collection: "class_groups", entry: { id: 1, name: "T1" } },
+    { collection: "class_allocations", entry: { id: 1 } },
+  ])(
+    "rejects a $collection entry missing required fields",
+    ({ collection, entry }) => {
+      // If an entity schema lost its fields (say, `z.object({})`), any
+      // payload would parse — this is what pins each one down.
+      const result = timetableInputSchema.safeParse({ [collection]: [entry] })
+
+      expect(result.success).toBe(false)
+    },
+  )
+
+  it("explains an identifier of the wrong type", () => {
+    const result = timetableInputSchema.safeParse({
+      shifts: [{ id: "um", name: "X" }],
+    })
+
+    expect(result.success).toBe(false)
+    expect(result.error?.issues[0].message).toBe("Identificador inválido.")
   })
 
   it("defaults a blocked flag that was left out", () => {

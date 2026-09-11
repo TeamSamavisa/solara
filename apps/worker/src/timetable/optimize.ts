@@ -22,8 +22,6 @@ import type { TimetableInput } from "./schema"
 export interface OptimizeOptions {
   /** Injected so a run can be reproduced; defaults to a clock-seeded stream. */
   random?: () => number
-  evolutionRuns?: number
-  maxStagnation?: number
   annealingIterations?: number
   /** Receives progress as the run unfolds; see `OptimizeEvent`. */
   onEvent?: OptimizeReporter
@@ -34,13 +32,7 @@ export interface OptimizeOutcome extends OptimizationResult {
 }
 
 const DEFAULTS = {
-  evolutionRuns: 5,
-  maxStagnation: 200,
   annealingIterations: 2500,
-  /** Schwefel's 1/5 success rule, as in the legacy service. */
-  successRuleWindow: 3,
-  initialSigma: 2,
-  sigmaFactor: 0.85,
   initialTemperature: 0.5,
   coolingFactor: 0.99,
   /** Matches the legacy `i % 100 == 0` reporting cadence. */
@@ -48,46 +40,11 @@ const DEFAULTS = {
 }
 
 /**
- * `sigma` is used as a mutation probability, so it is kept inside a range that
- * always leaves the search something to do: at the top every worst-placed
- * class is relocated, at the bottom one in twenty still is.
- */
-export const SIGMA_BOUNDS = { min: 0.05, max: 2 } as const
-
-/**
- * Schwefel's 1/5 success rule: grow the step when more than a fifth of the
- * mutations in the window improved the timetable, shrink it otherwise.
+ * How many classes the annealing tries to relocate per iteration — a quarter
+ * of the timetable, as in the legacy service.
  *
- * Deliberate fix over the legacy implementation: it compared the successes of
- * a window of `n` iterations against `2n`, which no window can ever reach —
- * at most `n` of `n` mutations succeed. The step therefore only ever shrank,
- * and after a few dozen iterations the evolution phase stopped mutating
- * anything at all.
- */
-export function adaptSigma(
-  sigma: number,
-  successes: number,
-  window: number,
-): number {
-  const next =
-    successes / window > 0.2
-      ? sigma / DEFAULTS.sigmaFactor
-      : sigma * DEFAULTS.sigmaFactor
-
-  return Math.min(SIGMA_BOUNDS.max, Math.max(SIGMA_BOUNDS.min, next))
-}
-
-/**
- * How many classes the evolution phase tries to relocate per iteration.
- *
- * The original sorts *every* class by cost, walks the first quarter of that
- * list and skips the zero-cost entries inside the window — so a nearly solved
- * timetable still gets every remaining conflict retried. Taking a quarter of
- * the non-zero entries instead collapses to a single attempt per iteration
- * exactly when the last conflicts need the most.
- *
- * Deliberate fix over both the original and the legacy service: they rounded
- * to zero for a timetable of fewer than four classes and never touched it.
+ * Deliberate fix over the original: it rounded to zero for a timetable of
+ * fewer than four classes and never touched it.
  */
 export function mutationBatchSize(totalAllocations: number): number {
   return Math.max(1, Math.floor(totalAllocations / 4))
@@ -140,80 +97,34 @@ function restore(state: TimetableState, saved: ReturnType<typeof snapshot>) {
 }
 
 /**
- * (1+1) evolutionary strategy that drives the hard-constraint cost down by
- * repeatedly relocating the worst-placed classes.
+ * Checks the timetable right after placement and says what is still broken.
+ *
+ * There is deliberately no evolution loop here. The legacy Python worker
+ * needed one because its initializer ignored teacher/group conflicts
+ * entirely, leaving a mess for the evolutionary phase to fix. This port's
+ * `placeInitial` already takes the first *conflict-free* spot for every
+ * class, and `mutateIdealSpot` (used by the annealing) only moves a class
+ * into conflict-free spots — so after placement no conflict has a
+ * destination the placement did not already know about, and an evolution
+ * loop would iterate without ever lowering the cost. Mutation testing
+ * confirmed it: every mutant inside the old loop body survived, because the
+ * body had no observable effect.
  */
-function runEvolution(
-  state: TimetableState,
+function reportHardConstraintStatus(
+  cost: HardConstraintsCost,
   prepared: PreparedTimetable,
-  random: () => number,
-  runs: number,
-  maxStagnation: number,
+  state: TimetableState,
   report: OptimizeReporter,
 ): void {
-  let sigma = DEFAULTS.initialSigma
-  const window = DEFAULTS.successRuleWindow
-
-  for (let run = 0; run < runs; run += 1) {
-    let iteration = 0
-    let stagnation = 0
-    let successes = 0
-
-    report({ type: "evolution-run", run: run + 1, runs, sigma })
-
-    while (stagnation < maxStagnation) {
-      const before = hardConstraintsCost(state.matrix, prepared)
-      if (before.total === 0) break
-
-      const worstFirst = before.perAllocation
-        .map((cost, index) => ({ cost, index }))
-        .filter((entry) => entry.cost > 0)
-        .sort((a, b) => b.cost - a.cost)
-
-      const batch = mutationBatchSize(prepared.allocations.length)
-      for (const entry of worstFirst.slice(0, batch)) {
-        if (random() < sigma) {
-          mutateIdealSpot(state, prepared, entry.index)
-        }
-      }
-
-      const after = hardConstraintsCost(state.matrix, prepared)
-      if (after.total < before.total) {
-        stagnation = 0
-        successes += 1
-      } else {
-        stagnation += 1
-      }
-
-      iteration += 1
-      if (iteration >= 10 * window && iteration % window === 0) {
-        sigma = adaptSigma(sigma, successes, window)
-        successes = 0
-      }
-    }
-
-    const final = hardConstraintsCost(state.matrix, prepared)
-    report({
-      type: "evolution-result",
-      run: run + 1,
-      iterations: iteration,
-      cost: summarise(final),
-    })
-
-    if (final.total === 0) {
-      report({ type: "optimal", run: run + 1, iterations: iteration })
-      break
-    }
-
-    // Last run and still broken: say exactly what is wrong, as the legacy
-    // conflict analysis did.
-    if (run === runs - 1) {
-      report({
-        type: "conflicts",
-        conflicts: findConflicts(state.matrix, prepared),
-      })
-    }
+  if (cost.total === 0) {
+    report({ type: "optimal" })
+    return
   }
+
+  report({
+    type: "conflicts",
+    conflicts: findConflicts(state.matrix, prepared),
+  })
 }
 
 /**
@@ -319,19 +230,11 @@ function solve(
     total: prepared.allocations.length,
     failed: initial.failed,
   })
-  report({
-    type: "initial-cost",
-    cost: summarise(hardConstraintsCost(state.matrix, prepared)),
-  })
 
-  runEvolution(
-    state,
-    prepared,
-    random,
-    options.evolutionRuns ?? DEFAULTS.evolutionRuns,
-    options.maxStagnation ?? DEFAULTS.maxStagnation,
-    report,
-  )
+  const initialCost = hardConstraintsCost(state.matrix, prepared)
+  report({ type: "initial-cost", cost: summarise(initialCost) })
+  reportHardConstraintStatus(initialCost, prepared, state, report)
+
   runAnnealing(
     state,
     prepared,
