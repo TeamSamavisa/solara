@@ -3,8 +3,6 @@ import { buildInput } from "@test/support/timetable"
 
 const fastOptions = {
   seed: 1,
-  evolutionRuns: 2,
-  maxStagnation: 5,
   annealingIterations: 10,
 }
 

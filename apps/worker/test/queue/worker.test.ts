@@ -8,7 +8,7 @@ function fakeJob(overrides: Record<string, unknown> = {}) {
     name: OPTIMIZE_TIMETABLE_JOB,
     data: {
       data: buildInput(),
-      options: { seed: 1, evolutionRuns: 1, maxStagnation: 3, annealingIterations: 5 },
+      options: { seed: 1, annealingIterations: 5 },
     },
     updateProgress: jest.fn().mockResolvedValue(undefined),
     ...overrides,

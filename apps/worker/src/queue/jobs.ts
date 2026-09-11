@@ -13,8 +13,6 @@ export const optimizeJobSchema = z.object({
     .object({
       /** Fixing the seed makes a run reproducible. */
       seed: z.number().int().optional(),
-      evolutionRuns: z.number().int().positive().optional(),
-      maxStagnation: z.number().int().positive().optional(),
       annealingIterations: z.number().int().nonnegative().optional(),
     })
     .optional(),
