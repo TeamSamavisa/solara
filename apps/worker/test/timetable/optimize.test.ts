@@ -1,15 +1,14 @@
 import { countHardViolations } from "@/timetable/costs"
 import { prepareTimetable } from "@/timetable/model"
+import type { OptimizeEvent } from "@/timetable/optimize"
 import { optimizeTimetable, runOptimization } from "@/timetable/optimize"
 import { createRandom } from "@/timetable/random"
 import { timetableInputSchema } from "@/timetable/schema"
 import { buildInput } from "@test/support/timetable"
 
-/** Small budgets keep the suite fast; the defaults are exercised separately. */
+/** A small budget keeps the suite fast; the defaults are exercised separately. */
 const fast = {
   random: createRandom(1),
-  evolutionRuns: 2,
-  maxStagnation: 5,
   annealingIterations: 20,
 }
 
@@ -139,15 +138,5 @@ describe("optimizeTimetable", () => {
 
     expect(occupied).toBe(filledCells)
     expect(countHardViolations(state.matrix, prepared)).toBe(0)
-  })
-
-  it("does not exceed the configured annealing budget", () => {
-    const input = buildInput()
-    const random = jest.fn(createRandom(3))
-
-    optimizeTimetable(input, { ...fast, random, annealingIterations: 3 })
-
-    // Each annealing iteration draws at least one value, plus the mutations.
-    expect(random.mock.calls.length).toBeGreaterThan(0)
   })
 })

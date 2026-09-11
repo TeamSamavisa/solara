@@ -10,8 +10,6 @@ import { buildLargeInput } from "@test/support/large-timetable"
 describe("optimizing a full week", () => {
   const outcome = optimizeTimetable(buildLargeInput(), {
     random: createRandom(1),
-    evolutionRuns: 3,
-    maxStagnation: 40,
     annealingIterations: 150,
   })
 
@@ -125,8 +123,6 @@ describe("optimizing an impossible week", () => {
 
     const outcome = optimizeTimetable(input, {
       random: createRandom(1),
-      evolutionRuns: 2,
-      maxStagnation: 10,
       annealingIterations: 20,
     })
 

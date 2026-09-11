@@ -172,6 +172,24 @@ describe("placeInitial", () => {
     expect(state.free.length).toBe(before - 2)
   })
 
+  it("removes exactly the occupied cells — not some other ones", () => {
+    const { prepared, state } = setup()
+    placeInitial(state, prepared)
+
+    // A wrong comparison in takeCell would still remove *a* cell, keeping the
+    // count right while leaving an occupied cell looking free.
+    for (const cells of state.filled.values()) {
+      for (const cell of cells) {
+        const stillListed = state.free.some(
+          (candidate) =>
+            candidate.row === cell.row &&
+            candidate.classroom === cell.classroom,
+        )
+        expect(stillListed).toBe(false)
+      }
+    }
+  })
+
   it("records the occupied rows for group and teacher", () => {
     const { prepared, state } = setup()
     placeInitial(state, prepared)
@@ -201,11 +219,52 @@ describe("mutateIdealSpot", () => {
     input.class_allocations[1].teacher_id = 100
     const { prepared, state } = setup(input)
 
-    // Force both classes onto the same row, sharing a teacher.
-    placeInitial(state, prepared)
-    const cellsA = state.filled.get(0)!
-    const cellsB = state.filled.get(1)!
-    expect(cellsA[0].row).not.toBe(cellsB[0].row)
+    // Force both classes onto the same row, sharing a teacher. Row 1 is
+    // Monday 07:00, covered by schedule 200.
+    state.matrix[1][0] = 0
+    state.matrix[1][1] = 1
+    state.filled.set(0, [{ row: 1, classroom: 0 }])
+    state.filled.set(1, [{ row: 1, classroom: 1 }])
+    state.free = state.free.filter((cell) => cell.row !== 1)
+    state.freeKeys = new Set(
+      state.free.map((cell) => cell.row * state.columnCount + cell.classroom),
+    )
+
+    expect(mutateIdealSpot(state, prepared, 0)).toBe(true)
+
+    const moved = state.filled.get(0)!
+    expect(moved[0].row).not.toBe(1)
+    expect(state.matrix[moved[0].row][moved[0].classroom]).toBe(0)
+    // The other class is left where it was.
+    expect(state.filled.get(1)).toEqual([{ row: 1, classroom: 1 }])
+    expect(state.matrix[1][0]).toBeNull()
+  })
+
+  it("never moves a class into a room its subject cannot use", () => {
+    const input = buildInput()
+    // The subject of allocation 0 requires a lab; only classroom 11
+    // (index 1) is one, so the first free cell is not good enough.
+    input.subjects[0].required_space_type_id = 2
+    input.classrooms[1].space_type_id = 2
+    input.class_allocations[1].teacher_id = 100
+    const { prepared, state } = setup(input)
+
+    // Both on Monday 07:00 (row 1), sharing a teacher: allocation 0 must
+    // move, and the first free cells belong to the incompatible room.
+    state.matrix[1][1] = 0
+    state.matrix[1][0] = 1
+    state.filled.set(0, [{ row: 1, classroom: 1 }])
+    state.filled.set(1, [{ row: 1, classroom: 0 }])
+    state.free = state.free.filter((cell) => cell.row !== 1)
+    state.freeKeys = new Set(
+      state.free.map((cell) => cell.row * state.columnCount + cell.classroom),
+    )
+
+    expect(mutateIdealSpot(state, prepared, 0)).toBe(true)
+
+    const moved = state.filled.get(0)!
+    expect(moved[0].row).not.toBe(1)
+    expect(moved[0].classroom).toBe(1)
   })
 
   it("keeps the grid consistent after a move", () => {

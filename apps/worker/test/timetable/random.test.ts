@@ -31,4 +31,16 @@ describe("createRandom", () => {
 
     expect(values.size).toBe(50)
   })
+
+  it("produces the exact reference sequence for a seed", () => {
+    // Pins the mulberry32 algorithm itself: range and determinism checks
+    // would still pass on a degraded variant (say, a `+` turned into a `-`),
+    // but every timetable reproduction depends on this exact stream.
+    const random = createRandom(42)
+
+    expect([random(), random(), random(), random(), random()]).toEqual([
+      0.6011037519201636, 0.44829055899754167, 0.8524657934904099,
+      0.6697340414393693, 0.17481389874592423,
+    ])
+  })
 })
