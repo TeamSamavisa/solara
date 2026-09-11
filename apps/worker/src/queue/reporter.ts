@@ -51,20 +51,8 @@ export function formatEvent(event: OptimizeEvent): string[] {
     case "initial-cost":
       return [`initial hard cost ${event.cost.total} (${breakdown(event.cost)})`]
 
-    case "evolution-run":
-      return [
-        `run ${event.run}/${event.runs} | sigma ${event.sigma.toFixed(4)}`,
-      ]
-
-    case "evolution-result":
-      return [
-        `run ${event.run} ended after ${event.iterations} iterations | cost ${event.cost.total} (${breakdown(event.cost)})`,
-      ]
-
     case "optimal":
-      return [
-        `optimal solution found on run ${event.run} after ${event.iterations} iterations`,
-      ]
+      return ["all hard constraints satisfied right after initial placement"]
 
     case "conflicts": {
       if (event.conflicts.length === 0) return []

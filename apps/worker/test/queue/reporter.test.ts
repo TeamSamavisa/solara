@@ -99,34 +99,8 @@ describe("formatEvent", () => {
     expect(text).toMatch(/availability/i)
   })
 
-  it("announces a run with its sigma", () => {
-    expect(lines({ type: "evolution-run", run: 2, runs: 5, sigma: 1.7 })).toMatch(
-      /2\/5.*1\.7/,
-    )
-  })
-
-  it("reports the iterations and the cost a run ended on", () => {
-    const text = lines({
-      type: "evolution-result",
-      run: 1,
-      iterations: 812,
-      cost: {
-        total: 4,
-        teacher: 2,
-        classroom: 0,
-        group: 2,
-        availability: 0,
-      },
-    })
-
-    expect(text).toContain("812")
-    expect(text).toContain("4")
-  })
-
-  it("celebrates an optimal solution", () => {
-    expect(lines({ type: "optimal", run: 2, iterations: 51 })).toMatch(
-      /optimal/i,
-    )
+  it("celebrates an immediately clean placement", () => {
+    expect(lines({ type: "optimal" })).toMatch(/hard constraints satisfied/i)
   })
 
   it("reports annealing progress with the current cost", () => {
@@ -196,11 +170,7 @@ describe("createConsoleReporter", () => {
   it("prefixes each line, so the lines are greppable", () => {
     const log = jest.fn()
 
-    createConsoleReporter(log)({
-      type: "optimal",
-      run: 1,
-      iterations: 10,
-    })
+    createConsoleReporter(log)({ type: "optimal" })
 
     expect(log).toHaveBeenCalledWith(expect.stringContaining("timetable:"))
   })
@@ -208,7 +178,7 @@ describe("createConsoleReporter", () => {
   it("defaults to the console", () => {
     const spy = jest.spyOn(console, "log").mockImplementation(() => {})
 
-    createConsoleReporter()({ type: "optimal", run: 1, iterations: 10 })
+    createConsoleReporter()({ type: "optimal" })
 
     expect(spy).toHaveBeenCalled()
     spy.mockRestore()

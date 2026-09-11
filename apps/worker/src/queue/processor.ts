@@ -63,8 +63,6 @@ export async function processOptimizeJob(
 
   const outcome = optimizeTimetable(data, {
     random: options?.seed === undefined ? undefined : createRandom(options.seed),
-    evolutionRuns: options?.evolutionRuns,
-    maxStagnation: options?.maxStagnation,
     annealingIterations: options?.annealingIterations,
     onEvent: context?.onEvent,
   })

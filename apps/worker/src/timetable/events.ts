@@ -31,14 +31,8 @@ export type OptimizeEvent =
       failed: FailedPlacement[]
     }
   | { type: "initial-cost"; cost: CostSummary }
-  | { type: "evolution-run"; run: number; runs: number; sigma: number }
-  | {
-      type: "evolution-result"
-      run: number
-      iterations: number
-      cost: CostSummary
-    }
-  | { type: "optimal"; run: number; iterations: number }
+  /** The initial placement already satisfies every hard constraint. */
+  | { type: "optimal" }
   | { type: "conflicts"; conflicts: Conflict[] }
   | {
       type: "annealing-progress"

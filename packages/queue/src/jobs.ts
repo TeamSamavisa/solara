@@ -5,8 +5,6 @@ export const OPTIMIZE_TIMETABLE_JOB = "optimize-timetable"
 export interface OptimizeJobOptions {
   /** Fixing the seed makes a run reproducible. */
   seed?: number
-  evolutionRuns?: number
-  maxStagnation?: number
   annealingIterations?: number
 }
 
