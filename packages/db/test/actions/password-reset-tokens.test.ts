@@ -1,4 +1,6 @@
 import { hash } from "bcryptjs"
+import type { SQL } from "drizzle-orm"
+import { MySqlDialect } from "drizzle-orm/mysql-core"
 import { createHash } from "node:crypto"
 import { ZodError } from "zod"
 
@@ -31,6 +33,17 @@ const INVALID_TOKEN_MESSAGE = "Token de recuperação inválido ou expirado."
 
 function sha256(value: string): string {
   return createHash("sha256").update(value).digest("hex")
+}
+
+const dialect = new MySqlDialect()
+
+/**
+ * Compiles the `where` clause of the n-th call of a mocked query root, so
+ * tests can assert which column and value a query actually filters on.
+ */
+function compiledWhere(mock: jest.Mock, callIndex = 0) {
+  const where = chainOf(mock, callIndex).argsFor("where")?.[0] as SQL
+  return dialect.sqlToQuery(where)
 }
 
 const validTokenRow = {
@@ -104,7 +117,11 @@ describe("createPasswordResetToken", () => {
     await createPasswordResetToken(5)
 
     expect(mockDb.delete).toHaveBeenCalledTimes(1)
-    expect(chainOf(mockDb.delete).argsFor("where")?.[0]).toBeDefined()
+    // The delete must be scoped to this user, or it would wipe everyone's
+    // tokens whenever anyone requests a reset.
+    const deleted = compiledWhere(mockDb.delete)
+    expect(deleted.sql).toContain("`user_id`")
+    expect(deleted.params).toEqual([5])
     // The delete must happen before the insert, otherwise the new token
     // would be removed too.
     const deleteOrder = mockDb.delete.mock.invocationCallOrder[0]
@@ -132,12 +149,15 @@ describe("resetPasswordWithToken validation", () => {
 describe("resetPasswordWithToken", () => {
   it("looks the token up by its hash, never by the plaintext value", async () => {
     queueResults(mockDb.select, [validTokenRow])
-    queueResults(mockDb.update, undefined, undefined)
+    queueResults(mockDb.update, [{ affectedRows: 1 }], undefined)
 
     await resetPasswordWithToken("plain-token", "secret123")
 
-    const where = chainOf(mockDb.select, 0).argsFor("where")?.[0]
-    expect(where).toBeDefined()
+    // The lookup must filter by the stored hash column with the digest of
+    // the received token — never by the plaintext value.
+    const lookup = compiledWhere(mockDb.select, 0)
+    expect(lookup.sql).toContain("`token_hash`")
+    expect(lookup.params).toEqual([sha256("plain-token")])
     expect(mockDb.select).toHaveBeenCalledTimes(1)
   })
 
@@ -178,7 +198,7 @@ describe("resetPasswordWithToken", () => {
 
   it("hashes the new password and marks the token as used in a transaction", async () => {
     queueResults(mockDb.select, [validTokenRow])
-    queueResults(mockDb.update, undefined, undefined)
+    queueResults(mockDb.update, [{ affectedRows: 1 }], undefined)
 
     await resetPasswordWithToken("plain-token", "secret123")
 
@@ -186,23 +206,54 @@ describe("resetPasswordWithToken", () => {
     expect(mockHash).toHaveBeenCalledWith("secret123", 10)
 
     expect(mockDb.update).toHaveBeenCalledTimes(2)
-    expect(chainOf(mockDb.update, 0).argsFor("set")).toEqual([
-      { password_hash: "hashed:secret123" },
-    ])
-
-    const consumed = chainOf(mockDb.update, 1).argsFor("set")?.[0] as {
+    // The token is consumed first — conditionally, so a concurrent request
+    // cannot reuse it — and only then is the password updated.
+    const consumed = chainOf(mockDb.update, 0).argsFor("set")?.[0] as {
       used_at: Date
     }
     expect(consumed.used_at).toBeInstanceOf(Date)
+    expect(chainOf(mockDb.update, 1).argsFor("set")).toEqual([
+      { password_hash: "hashed:secret123" },
+    ])
+  })
+
+  it("consumes the token atomically, scoped to the row it found", async () => {
+    queueResults(mockDb.select, [validTokenRow])
+    queueResults(mockDb.update, [{ affectedRows: 1 }], undefined)
+
+    await resetPasswordWithToken("plain-token", "secret123")
+
+    // The conditional consume must target the token row AND require it to
+    // still be unused — that is what closes the double-spend race.
+    const consume = compiledWhere(mockDb.update, 0)
+    expect(consume.sql).toContain("`id`")
+    expect(consume.sql).toContain("`used_at`")
+    expect(consume.params).toEqual([validTokenRow.id])
+  })
+
+  it("rejects a token a concurrent request consumed first", async () => {
+    queueResults(mockDb.select, [validTokenRow])
+    // The conditional consume matched no row: used_at was already set.
+    queueResults(mockDb.update, [{ affectedRows: 0 }])
+
+    await expect(
+      resetPasswordWithToken("plain-token", "secret123")
+    ).rejects.toThrow(new NotFoundError(INVALID_TOKEN_MESSAGE))
+
+    // The password is never touched when the consume loses the race.
+    expect(mockDb.update).toHaveBeenCalledTimes(1)
   })
 
   it("updates the password of the user the token belongs to", async () => {
     queueResults(mockDb.select, [validTokenRow])
-    queueResults(mockDb.update, undefined, undefined)
+    queueResults(mockDb.update, [{ affectedRows: 1 }], undefined)
 
     await resetPasswordWithToken("plain-token", "secret123")
 
-    expect(chainOf(mockDb.update, 0).argsFor("where")?.[0]).toBeDefined()
+    // The password update must target the user the token belongs to.
+    const updated = compiledWhere(mockDb.update, 1)
+    expect(updated.sql).toContain("`users`.`id`")
+    expect(updated.params).toEqual([validTokenRow.user_id])
   })
 
   it("does not consume the token when validation fails", async () => {

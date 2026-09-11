@@ -1,5 +1,5 @@
 import { hash } from "bcryptjs"
-import { eq } from "drizzle-orm"
+import { and, eq, isNull } from "drizzle-orm"
 import { createHash, randomBytes } from "node:crypto"
 
 import { db } from "../client"
@@ -55,8 +55,14 @@ export async function createPasswordResetToken(
  *
  * Unknown, used and expired tokens all raise the same NotFoundError, so the
  * response reveals nothing about which case was hit. On success the token is
- * consumed in the same transaction that changes the password, making every
- * reset link single-use.
+ * consumed atomically with the password change, making every reset link
+ * single-use even under concurrent requests.
+ *
+ * Known limitation, deliberately accepted for now: existing session cookies
+ * survive the reset, because sessions are stateless JWTs that cannot be
+ * revoked server-side. If that window (up to SESSION_DURATION_MS) ever
+ * becomes a concern, compare the token's `iat` against a
+ * `password_changed_at` column in the DAL.
  */
 export async function resetPasswordWithToken(
   token: string,
@@ -79,14 +85,26 @@ export async function resetPasswordWithToken(
   const passwordHash = await hash(data.password, PASSWORD_SALT_ROUNDS)
 
   await db.transaction(async (tx) => {
+    // Consuming the token is conditional on it still being unused: a
+    // concurrent request that consumed it first affects zero rows here,
+    // closing the race between the check above and the update below.
+    const [consumed] = await tx
+      .update(passwordResetTokens)
+      .set({ used_at: new Date() })
+      .where(
+        and(
+          eq(passwordResetTokens.id, record.id),
+          isNull(passwordResetTokens.used_at)
+        )
+      )
+
+    if (consumed.affectedRows !== 1) {
+      throw new NotFoundError(INVALID_RESET_TOKEN_MESSAGE)
+    }
+
     await tx
       .update(users)
       .set({ password_hash: passwordHash })
       .where(eq(users.id, record.user_id))
-
-    await tx
-      .update(passwordResetTokens)
-      .set({ used_at: new Date() })
-      .where(eq(passwordResetTokens.id, record.id))
   })
 }
