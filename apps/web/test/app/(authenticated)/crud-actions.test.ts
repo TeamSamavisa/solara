@@ -12,6 +12,7 @@ import * as subjectActions from "@/app/(authenticated)/subjects/actions"
 import * as teacherActions from "@/app/(authenticated)/teachers/actions"
 import * as userActions from "@/app/(authenticated)/users/actions"
 import { requireRole } from "@/lib/auth/dal"
+import { sendFirstAccessInstructions } from "@/lib/mail/first-access"
 import * as assignmentDb from "@solara/db/actions/assignments"
 import * as classGroupDb from "@solara/db/actions/class-groups"
 import * as courseTypeDb from "@solara/db/actions/course-types"
@@ -28,6 +29,9 @@ import type { FormState } from "@/lib/forms"
 
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }))
 jest.mock("@/lib/auth/dal", () => ({ requireRole: jest.fn() }))
+jest.mock("@/lib/mail/first-access", () => ({
+  sendFirstAccessInstructions: jest.fn(),
+}))
 jest.mock("@solara/db/idempotency", () => ({ runOnce: jest.fn() }))
 jest.mock("@solara/db/actions/shifts", () => ({
   createShift: jest.fn(),
@@ -81,6 +85,9 @@ jest.mock("@solara/db/actions/assignments", () => ({
 }))
 
 const mockRequireRole = requireRole as jest.MockedFunction<typeof requireRole>
+const mockSendFirstAccess = sendFirstAccessInstructions as jest.MockedFunction<
+  typeof sendFirstAccessInstructions
+>
 const mockRunOnce = runOnce as jest.MockedFunction<typeof runOnce>
 const mockRevalidatePath = revalidatePath as jest.MockedFunction<
   typeof revalidatePath
@@ -88,7 +95,7 @@ const mockRevalidatePath = revalidatePath as jest.MockedFunction<
 
 type Action = (
   state: FormState | undefined,
-  formData: FormData,
+  formData: FormData
 ) => Promise<FormState>
 
 interface EntityCase {
@@ -396,6 +403,8 @@ beforeEach(() => {
     entity.db.remove.mockReset()
   }
 
+  mockSendFirstAccess.mockReset()
+
   mockRequireRole.mockResolvedValue({ userId: 1, role: "admin" })
   mockRunOnce.mockImplementation(async (_scope, _key, operation) => ({
     applied: true,
@@ -408,9 +417,9 @@ describe.each(entities)("$label server actions", (entity) => {
     it("requires the admin role before touching the database", async () => {
       mockRequireRole.mockRejectedValue(new Error("REDIRECT:/error/403"))
 
-      await expect(entity.create(undefined, form(entity.valid))).rejects.toThrow(
-        "REDIRECT:/error/403",
-      )
+      await expect(
+        entity.create(undefined, form(entity.valid))
+      ).rejects.toThrow("REDIRECT:/error/403")
       expect(entity.db.create).not.toHaveBeenCalled()
     })
 
@@ -442,13 +451,13 @@ describe.each(entities)("$label server actions", (entity) => {
     it("passes the idempotency key to the deduplication helper", async () => {
       await entity.create(
         undefined,
-        form({ ...entity.valid, idempotencyKey: "key-1" }),
+        form({ ...entity.valid, idempotencyKey: "key-1" })
       )
 
       expect(mockRunOnce).toHaveBeenCalledWith(
         entity.scope,
         "key-1",
-        expect.any(Function),
+        expect.any(Function)
       )
     })
 
@@ -457,7 +466,7 @@ describe.each(entities)("$label server actions", (entity) => {
 
       const state = await entity.create(
         undefined,
-        form({ ...entity.valid, idempotencyKey: "key-1" }),
+        form({ ...entity.valid, idempotencyKey: "key-1" })
       )
 
       expect(state).toMatchObject({
@@ -496,7 +505,7 @@ describe.each(entities)("$label server actions", (entity) => {
     it("updates the record and revalidates", async () => {
       const state = await entity.update(
         undefined,
-        form({ ...entity.valid, id: "3" }),
+        form({ ...entity.valid, id: "3" })
       )
 
       expect(entity.db.update).toHaveBeenCalledWith(3, expect.any(Object))
@@ -509,18 +518,18 @@ describe.each(entities)("$label server actions", (entity) => {
       async (id) => {
         const state = await entity.update(
           undefined,
-          form({ ...entity.valid, id }),
+          form({ ...entity.valid, id })
         )
 
         expect(state.message).toBe(entity.invalidIdMessage)
         expect(entity.db.update).not.toHaveBeenCalled()
-      },
+      }
     )
 
     it("rejects an invalid payload", async () => {
       const state = await entity.update(
         undefined,
-        form({ ...entity.invalid, id: "3" }),
+        form({ ...entity.invalid, id: "3" })
       )
 
       expect(state.errors?.[entity.invalidField]).toBeDefined()
@@ -532,7 +541,7 @@ describe.each(entities)("$label server actions", (entity) => {
 
       const state = await entity.update(
         undefined,
-        form({ ...entity.valid, id: "3" }),
+        form({ ...entity.valid, id: "3" })
       )
 
       expect(state.message).toBe("Not found")
@@ -577,5 +586,150 @@ describe.each(entities)("$label server actions", (entity) => {
       expect(state.message).toBe(entity.invalidIdMessage)
       expect(entity.db.remove).not.toHaveBeenCalled()
     })
+  })
+})
+
+/**
+ * Users and teachers share the first-access flow: the admin never picks a
+ * password — the new user validates the account and defines it from the link
+ * sent by e-mail.
+ */
+describe("first access instructions", () => {
+  const createdUser = {
+    id: 5,
+    full_name: "Ana Souza",
+    registration: "20240001",
+    email: "ana@example.com",
+    role: "teacher",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }
+
+  const mockCreateUser = userDb.createUser as jest.Mock
+
+  it("sends the instructions after creating a user", async () => {
+    mockCreateUser.mockResolvedValue(createdUser)
+
+    const state = await userActions.createUserAction(
+      undefined,
+      form({ full_name: "Ana Souza", email: "ana@example.com", role: "admin" })
+    )
+
+    expect(state.success).toBe(true)
+    expect(mockSendFirstAccess).toHaveBeenCalledWith(createdUser)
+  })
+
+  it("sends the instructions after creating a teacher", async () => {
+    mockCreateUser.mockResolvedValue(createdUser)
+
+    const state = await teacherActions.createTeacherAction(
+      undefined,
+      form({ full_name: "Ana Souza", email: "ana@example.com" })
+    )
+
+    expect(state.success).toBe(true)
+    expect(mockSendFirstAccess).toHaveBeenCalledWith(createdUser)
+  })
+
+  it("does not resend when the submission was replayed", async () => {
+    mockRunOnce.mockResolvedValue({ applied: false })
+
+    const state = await userActions.createUserAction(
+      undefined,
+      form({
+        full_name: "Ana Souza",
+        email: "ana@example.com",
+        idempotencyKey: "key-1",
+      })
+    )
+
+    expect(state).toMatchObject({
+      success: true,
+      message: "Este usuário já havia sido criado.",
+    })
+    expect(mockSendFirstAccess).not.toHaveBeenCalled()
+  })
+
+  it("keeps the creation when the user email cannot be sent", async () => {
+    mockCreateUser.mockResolvedValue(createdUser)
+    mockSendFirstAccess.mockRejectedValue(new Error("SMTP down"))
+
+    const state = await userActions.createUserAction(
+      undefined,
+      form({ full_name: "Ana Souza", email: "ana@example.com", role: "admin" })
+    )
+
+    // The record already exists, so the message must not suggest otherwise.
+    expect(state).toEqual({
+      success: true,
+      message:
+        "Usuário criado, mas não foi possível enviar o e-mail de primeiro acesso.",
+    })
+  })
+
+  it("uses the teacher wording when the teacher email cannot be sent", async () => {
+    mockCreateUser.mockResolvedValue(createdUser)
+    mockSendFirstAccess.mockRejectedValue(new Error("SMTP down"))
+
+    const state = await teacherActions.createTeacherAction(
+      undefined,
+      form({ full_name: "Ana Souza", email: "ana@example.com" })
+    )
+
+    expect(state).toEqual({
+      success: true,
+      message:
+        "Professor criado, mas não foi possível enviar o e-mail de primeiro acesso.",
+    })
+  })
+
+  it("ignores a password sent on creation: the user defines it via e-mail", async () => {
+    mockCreateUser.mockResolvedValue(createdUser)
+
+    await userActions.createUserAction(
+      undefined,
+      form({
+        full_name: "Ana Souza",
+        email: "ana@example.com",
+        role: "admin",
+        password: "secret123",
+      })
+    )
+
+    expect(mockCreateUser.mock.calls[0][0].password).toBeUndefined()
+  })
+
+  it("ignores a password sent on teacher creation", async () => {
+    mockCreateUser.mockResolvedValue(createdUser)
+
+    await teacherActions.createTeacherAction(
+      undefined,
+      form({
+        full_name: "Ana Souza",
+        email: "ana@example.com",
+        password: "secret123",
+      })
+    )
+
+    expect(mockCreateUser.mock.calls[0][0].password).toBeUndefined()
+  })
+
+  it("still accepts a new password when editing", async () => {
+    await userActions.updateUserAction(
+      undefined,
+      form({
+        id: "3",
+        full_name: "Ana Souza",
+        email: "ana@example.com",
+        role: "admin",
+        password: "nova-senha",
+      })
+    )
+
+    expect(userDb.updateUser as jest.Mock).toHaveBeenCalledWith(
+      3,
+      expect.objectContaining({ password: "nova-senha" })
+    )
+    expect(mockSendFirstAccess).not.toHaveBeenCalled()
   })
 })

@@ -24,9 +24,14 @@ export interface CrudLabels {
   createFailed: string
   updateFailed: string
   deleteFailed: string
+  /**
+   * Used when the record was created but the `onCreated` follow-up failed.
+   * Defaults to `created`.
+   */
+  createIncomplete?: string
 }
 
-export interface CrudConfig<TCreate, TUpdate> {
+export interface CrudConfig<TCreate, TUpdate, TCreated = unknown> {
   /** Path revalidated after every successful mutation. */
   path: string
   /** Idempotency scope, e.g. `"course.create"`. */
@@ -40,7 +45,14 @@ export interface CrudConfig<TCreate, TUpdate> {
    * send a field only on creation, e.g. a fixed role.
    */
   readForm: (formData: FormData, mode: "create" | "update") => unknown
-  create: (input: TCreate) => Promise<unknown>
+  create: (input: TCreate) => Promise<TCreated>
+  /**
+   * Follow-up that runs once per successful creation, e.g. e-mailing the
+   * first-access instructions. Skipped on replayed submissions. A failure is
+   * reported with `labels.createIncomplete` because the record already
+   * exists — the creation itself must not look like it failed.
+   */
+  onCreated?: (created: TCreated) => Promise<void>
   update: (id: number, input: TUpdate) => Promise<unknown>
   remove: (id: number) => Promise<unknown>
   labels: CrudLabels
@@ -49,15 +61,15 @@ export interface CrudConfig<TCreate, TUpdate> {
 export interface CrudHandlers {
   create: (
     state: FormState | undefined,
-    formData: FormData,
+    formData: FormData
   ) => Promise<FormState>
   update: (
     state: FormState | undefined,
-    formData: FormData,
+    formData: FormData
   ) => Promise<FormState>
   remove: (
     state: FormState | undefined,
-    formData: FormData,
+    formData: FormData
   ) => Promise<FormState>
 }
 
@@ -72,8 +84,8 @@ function readId(formData: FormData): number | null {
  * screens: authorize, validate, mutate, revalidate — with idempotent creates
  * and idempotent deletes.
  */
-export function createCrudHandlers<TCreate, TUpdate>(
-  config: CrudConfig<TCreate, TUpdate>,
+export function createCrudHandlers<TCreate, TUpdate, TCreated = unknown>(
+  config: CrudConfig<TCreate, TUpdate, TCreated>
 ): CrudHandlers {
   const { labels } = config
 
@@ -82,7 +94,7 @@ export function createCrudHandlers<TCreate, TUpdate>(
       await requireRole(config.role)
 
       const parsed = config.createSchema.safeParse(
-        config.readForm(formData, "create"),
+        config.readForm(formData, "create")
       )
 
       if (!parsed.success) {
@@ -93,15 +105,27 @@ export function createCrudHandlers<TCreate, TUpdate>(
         const outcome = await runOnce(
           config.scope,
           readOptionalString(formData, "idempotencyKey"),
-          () => config.create(parsed.data),
+          () => config.create(parsed.data)
         )
 
         revalidatePath(config.path)
 
-        return {
-          success: true,
-          message: outcome.applied ? labels.created : labels.replayed,
+        if (!outcome.applied) {
+          return { success: true, message: labels.replayed }
         }
+
+        if (config.onCreated) {
+          try {
+            await config.onCreated(outcome.result)
+          } catch {
+            return {
+              success: true,
+              message: labels.createIncomplete ?? labels.created,
+            }
+          }
+        }
+
+        return { success: true, message: labels.created }
       } catch (error) {
         return errorToFormState(error, labels.createFailed)
       }
@@ -117,7 +141,7 @@ export function createCrudHandlers<TCreate, TUpdate>(
       }
 
       const parsed = config.updateSchema.safeParse(
-        config.readForm(formData, "update"),
+        config.readForm(formData, "update")
       )
 
       if (!parsed.success) {
