@@ -2,6 +2,7 @@ import { compare } from "bcryptjs"
 import { redirect } from "next/navigation"
 
 import {
+  activateAccount,
   login,
   logout,
   requestPasswordReset,
@@ -13,6 +14,7 @@ import {
 } from "@/lib/auth/definitions"
 import { createSession, deleteSession } from "@/lib/auth/session"
 import { sendPasswordResetEmail } from "@/lib/mail/password-reset"
+import { activateAccountWithToken } from "@solara/db/actions/first-access-tokens"
 import {
   createPasswordResetToken,
   resetPasswordWithToken,
@@ -31,6 +33,9 @@ jest.mock("@/lib/auth/session", () => ({
   deleteSession: jest.fn(),
 }))
 jest.mock("@solara/db/actions/users", () => ({ getUserByEmail: jest.fn() }))
+jest.mock("@solara/db/actions/first-access-tokens", () => ({
+  activateAccountWithToken: jest.fn(),
+}))
 jest.mock("@solara/db/actions/password-reset-tokens", () => ({
   createPasswordResetToken: jest.fn(),
   resetPasswordWithToken: jest.fn(),
@@ -55,6 +60,10 @@ const mockCreatePasswordResetToken =
   >
 const mockResetPasswordWithToken =
   resetPasswordWithToken as jest.MockedFunction<typeof resetPasswordWithToken>
+const mockActivateAccountWithToken =
+  activateAccountWithToken as jest.MockedFunction<
+    typeof activateAccountWithToken
+  >
 const mockSendPasswordResetEmail =
   sendPasswordResetEmail as jest.MockedFunction<typeof sendPasswordResetEmail>
 const mockRedirect = redirect as unknown as jest.Mock
@@ -75,8 +84,9 @@ function loginForm(entries: Record<string, string>): FormData {
 
 describe("login validation", () => {
   it("rejects a malformed email without querying the database", async () => {
-    const state = await login(undefined,
-      loginForm({ email: "nope", password: "secret123" }),
+    const state = await login(
+      undefined,
+      loginForm({ email: "nope", password: "secret123" })
     )
 
     expect(state?.errors?.email).toEqual(["Informe um e-mail válido."])
@@ -85,16 +95,18 @@ describe("login validation", () => {
   })
 
   it("rejects an empty password", async () => {
-    const state = await login(undefined,
-      loginForm({ email: "ana@example.com", password: "" }),
+    const state = await login(
+      undefined,
+      loginForm({ email: "ana@example.com", password: "" })
     )
 
     expect(state?.errors?.password).toEqual(["Informe sua senha."])
   })
 
   it("echoes the submitted email back so the field is not cleared", async () => {
-    const state = await login(undefined,
-      loginForm({ email: "typo@", password: "secret123" }),
+    const state = await login(
+      undefined,
+      loginForm({ email: "typo@", password: "secret123" })
     )
 
     expect(state?.email).toBe("typo@")
@@ -107,7 +119,10 @@ describe("login credentials", () => {
     mockCompare.mockResolvedValue(true as never)
 
     await expect(
-      login(undefined, loginForm({ email: "ana@example.com", password: "secret123" })),
+      login(
+        undefined,
+        loginForm({ email: "ana@example.com", password: "secret123" })
+      )
     ).rejects.toThrow("REDIRECT:/dashboard")
 
     expect(mockCompare).toHaveBeenCalledWith("secret123", "$2b$10$hash")
@@ -115,11 +130,14 @@ describe("login credentials", () => {
   })
 
   it("reports a generic message for an unknown email", async () => {
-    mockGetUserByEmail.mockRejectedValue(new NotFoundError("Usuário não encontrado."))
+    mockGetUserByEmail.mockRejectedValue(
+      new NotFoundError("Usuário não encontrado.")
+    )
     mockCompare.mockResolvedValue(false as never)
 
-    const state = await login(undefined,
-      loginForm({ email: "ghost@example.com", password: "secret123" }),
+    const state = await login(
+      undefined,
+      loginForm({ email: "ghost@example.com", password: "secret123" })
     )
 
     expect(state?.message).toBe(INVALID_CREDENTIALS_MESSAGE)
@@ -127,11 +145,14 @@ describe("login credentials", () => {
   })
 
   it("still hashes when the email is unknown, to avoid user enumeration", async () => {
-    mockGetUserByEmail.mockRejectedValue(new NotFoundError("Usuário não encontrado."))
+    mockGetUserByEmail.mockRejectedValue(
+      new NotFoundError("Usuário não encontrado.")
+    )
     mockCompare.mockResolvedValue(false as never)
 
-    await login(undefined,
-      loginForm({ email: "ghost@example.com", password: "secret123" }),
+    await login(
+      undefined,
+      loginForm({ email: "ghost@example.com", password: "secret123" })
     )
 
     expect(mockCompare).toHaveBeenCalledTimes(1)
@@ -141,11 +162,17 @@ describe("login credentials", () => {
     // Worst case: someone learns the plaintext behind DUMMY_HASH and submits
     // it. bcrypt then reports a match, but there is no user record to sign in
     // as, so the missing-credentials guard must still reject the attempt.
-    mockGetUserByEmail.mockRejectedValue(new NotFoundError("Usuário não encontrado."))
+    mockGetUserByEmail.mockRejectedValue(
+      new NotFoundError("Usuário não encontrado.")
+    )
     mockCompare.mockResolvedValue(true as never)
 
-    const state = await login(undefined,
-      loginForm({ email: "ghost@example.com", password: "whatever-dummy-hashes-to" }),
+    const state = await login(
+      undefined,
+      loginForm({
+        email: "ghost@example.com",
+        password: "whatever-dummy-hashes-to",
+      })
     )
 
     expect(state?.message).toBe(INVALID_CREDENTIALS_MESSAGE)
@@ -156,8 +183,9 @@ describe("login credentials", () => {
     mockGetUserByEmail.mockResolvedValue(credentials)
     mockCompare.mockResolvedValue(false as never)
 
-    const state = await login(undefined,
-      loginForm({ email: "ana@example.com", password: "wrong-password" }),
+    const state = await login(
+      undefined,
+      loginForm({ email: "ana@example.com", password: "wrong-password" })
     )
 
     expect(state?.message).toBe(INVALID_CREDENTIALS_MESSAGE)
@@ -168,8 +196,9 @@ describe("login credentials", () => {
     mockGetUserByEmail.mockResolvedValue({ ...credentials, role: "root" })
     mockCompare.mockResolvedValue(true as never)
 
-    const state = await login(undefined,
-      loginForm({ email: "ana@example.com", password: "secret123" }),
+    const state = await login(
+      undefined,
+      loginForm({ email: "ana@example.com", password: "secret123" })
     )
 
     expect(state?.message).toBe(INVALID_CREDENTIALS_MESSAGE)
@@ -185,25 +214,27 @@ describe("login redirect target", () => {
 
   it("honours a same-origin redirectTo", async () => {
     await expect(
-      login(undefined,
+      login(
+        undefined,
         loginForm({
           email: "ana@example.com",
           password: "secret123",
           redirectTo: "/teachers?page=2",
-        }),
-      ),
+        })
+      )
     ).rejects.toThrow("REDIRECT:/teachers?page=2")
   })
 
   it("ignores an off-site redirectTo", async () => {
     await expect(
-      login(undefined,
+      login(
+        undefined,
         loginForm({
           email: "ana@example.com",
           password: "secret123",
           redirectTo: "https://evil.com",
-        }),
-      ),
+        })
+      )
     ).rejects.toThrow("REDIRECT:/dashboard")
   })
 })
@@ -212,7 +243,7 @@ describe("requestPasswordReset validation", () => {
   it("rejects a malformed email without querying the database", async () => {
     const state = await requestPasswordReset(
       undefined,
-      loginForm({ email: "nope" }),
+      loginForm({ email: "nope" })
     )
 
     expect(state?.errors?.email).toEqual(["Informe um e-mail válido."])
@@ -223,7 +254,7 @@ describe("requestPasswordReset validation", () => {
   it("echoes the submitted email back so the field is not cleared", async () => {
     const state = await requestPasswordReset(
       undefined,
-      loginForm({ email: "typo@" }),
+      loginForm({ email: "typo@" })
     )
 
     expect(state?.email).toBe("typo@")
@@ -241,12 +272,12 @@ describe("requestPasswordReset", () => {
 
   it("answers an unknown email with the generic message and sends nothing", async () => {
     mockGetUserByEmail.mockRejectedValue(
-      new NotFoundError("Usuário não encontrado."),
+      new NotFoundError("Usuário não encontrado.")
     )
 
     const state = await requestPasswordReset(
       undefined,
-      loginForm({ email: "ghost@example.com" }),
+      loginForm({ email: "ghost@example.com" })
     )
 
     expect(state).toEqual({
@@ -263,7 +294,7 @@ describe("requestPasswordReset", () => {
 
     const state = await requestPasswordReset(
       undefined,
-      loginForm({ email: "ana@example.com" }),
+      loginForm({ email: "ana@example.com" })
     )
 
     expect(mockCreatePasswordResetToken).toHaveBeenCalledWith(7)
@@ -283,15 +314,15 @@ describe("requestPasswordReset", () => {
     mockCreatePasswordResetToken.mockResolvedValue("plain-token")
     const known = await requestPasswordReset(
       undefined,
-      loginForm({ email: "ana@example.com" }),
+      loginForm({ email: "ana@example.com" })
     )
 
     mockGetUserByEmail.mockRejectedValue(
-      new NotFoundError("Usuário não encontrado."),
+      new NotFoundError("Usuário não encontrado.")
     )
     const unknown = await requestPasswordReset(
       undefined,
-      loginForm({ email: "ghost@example.com" }),
+      loginForm({ email: "ghost@example.com" })
     )
 
     expect(known?.message).toBe(unknown?.message)
@@ -304,13 +335,13 @@ describe("requestPasswordReset", () => {
 
     await requestPasswordReset(
       undefined,
-      loginForm({ email: "ana@example.com" }),
+      loginForm({ email: "ana@example.com" })
     )
 
     expect(mockSendPasswordResetEmail).toHaveBeenCalledWith(
       expect.objectContaining({
         resetUrl: "http://localhost:3000/reset-password?token=plain-token",
-      }),
+      })
     )
   })
 
@@ -321,12 +352,12 @@ describe("requestPasswordReset", () => {
 
     const state = await requestPasswordReset(
       undefined,
-      loginForm({ email: "ana@example.com" }),
+      loginForm({ email: "ana@example.com" })
     )
 
     expect(state?.success).toBeUndefined()
     expect(state?.message).toBe(
-      "Não foi possível enviar o e-mail de recuperação. Tente novamente mais tarde.",
+      "Não foi possível enviar o e-mail de recuperação. Tente novamente mais tarde."
     )
   })
 })
@@ -339,12 +370,10 @@ describe("resetPassword validation", () => {
         token: "plain-token",
         password: "secret123",
         confirmPassword: "different",
-      }),
+      })
     )
 
-    expect(state?.errors?.confirmPassword).toEqual([
-      "As senhas não coincidem.",
-    ])
+    expect(state?.errors?.confirmPassword).toEqual(["As senhas não coincidem."])
     expect(mockResetPasswordWithToken).not.toHaveBeenCalled()
   })
 
@@ -355,7 +384,7 @@ describe("resetPassword validation", () => {
         token: "plain-token",
         password: "123",
         confirmPassword: "123",
-      }),
+      })
     )
 
     expect(state?.errors?.password).toEqual([
@@ -367,7 +396,7 @@ describe("resetPassword validation", () => {
   it("reports a missing token as a form-level error", async () => {
     const state = await resetPassword(
       undefined,
-      loginForm({ password: "secret123", confirmPassword: "secret123" }),
+      loginForm({ password: "secret123", confirmPassword: "secret123" })
     )
 
     expect(state?.message).toBe("Token de recuperação inválido ou expirado.")
@@ -387,19 +416,19 @@ describe("resetPassword", () => {
           token: "plain-token",
           password: "secret123",
           confirmPassword: "secret123",
-        }),
-      ),
+        })
+      )
     ).rejects.toThrow("REDIRECT:/login")
 
     expect(mockResetPasswordWithToken).toHaveBeenCalledWith(
       "plain-token",
-      "secret123",
+      "secret123"
     )
   })
 
   it("shows the token error raised by the database", async () => {
     mockResetPasswordWithToken.mockRejectedValue(
-      new NotFoundError("Token de recuperação inválido ou expirado."),
+      new NotFoundError("Token de recuperação inválido ou expirado.")
     )
 
     const state = await resetPassword(
@@ -408,7 +437,7 @@ describe("resetPassword", () => {
         token: "stale-token",
         password: "secret123",
         confirmPassword: "secret123",
-      }),
+      })
     )
 
     expect(state?.message).toBe("Token de recuperação inválido ou expirado.")
@@ -423,10 +452,111 @@ describe("resetPassword", () => {
         token: "plain-token",
         password: "secret123",
         confirmPassword: "secret123",
-      }),
+      })
     )
 
     expect(state?.message).toBe("Não foi possível redefinir a senha.")
+  })
+})
+
+describe("activateAccount validation", () => {
+  it("rejects mismatched passwords without touching the database", async () => {
+    const state = await activateAccount(
+      undefined,
+      loginForm({
+        token: "plain-token",
+        password: "secret123",
+        confirmPassword: "different",
+      })
+    )
+
+    expect(state?.errors?.confirmPassword).toEqual(["As senhas não coincidem."])
+    expect(mockActivateAccountWithToken).not.toHaveBeenCalled()
+  })
+
+  it("rejects a short password", async () => {
+    const state = await activateAccount(
+      undefined,
+      loginForm({
+        token: "plain-token",
+        password: "123",
+        confirmPassword: "123",
+      })
+    )
+
+    expect(state?.errors?.password).toEqual([
+      "A senha deve ter ao menos 6 caracteres.",
+    ])
+    expect(mockActivateAccountWithToken).not.toHaveBeenCalled()
+  })
+
+  it("reports a missing token as a form-level error", async () => {
+    const state = await activateAccount(
+      undefined,
+      loginForm({ password: "secret123", confirmPassword: "secret123" })
+    )
+
+    expect(state?.message).toBe(
+      "Token de primeiro acesso inválido ou expirado."
+    )
+    expect(state?.errors).toBeUndefined()
+    expect(mockActivateAccountWithToken).not.toHaveBeenCalled()
+  })
+})
+
+describe("activateAccount", () => {
+  it("activates the account and redirects to the login page", async () => {
+    mockActivateAccountWithToken.mockResolvedValue(undefined)
+
+    await expect(
+      activateAccount(
+        undefined,
+        loginForm({
+          token: "plain-token",
+          password: "secret123",
+          confirmPassword: "secret123",
+        })
+      )
+    ).rejects.toThrow("REDIRECT:/login")
+
+    expect(mockActivateAccountWithToken).toHaveBeenCalledWith(
+      "plain-token",
+      "secret123"
+    )
+  })
+
+  it("shows the token error raised by the database", async () => {
+    mockActivateAccountWithToken.mockRejectedValue(
+      new NotFoundError("Token de primeiro acesso inválido ou expirado.")
+    )
+
+    const state = await activateAccount(
+      undefined,
+      loginForm({
+        token: "stale-token",
+        password: "secret123",
+        confirmPassword: "secret123",
+      })
+    )
+
+    expect(state?.message).toBe(
+      "Token de primeiro acesso inválido ou expirado."
+    )
+  })
+
+  it("hides unexpected failures behind a generic message", async () => {
+    mockActivateAccountWithToken.mockRejectedValue(new Error("db down"))
+
+    const state = await activateAccount(
+      undefined,
+      loginForm({
+        token: "plain-token",
+        password: "secret123",
+        confirmPassword: "secret123",
+      })
+    )
+
+    expect(state?.message).toBe("Não foi possível ativar a conta.")
   })
 })
 
